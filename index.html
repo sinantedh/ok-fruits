@@ -1,447 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShopFlow</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0f1117;
-  --sidebar:#141820;
-  --card:#1a1f2e;
-  --border:#2a3040;
-  --green:#10b981;
-  --green-dark:#059669;
-  --green-dim:#0d9e6e22;
-  --text:#f1f5f9;
-  --muted:#8896a5;
-  --danger:#ef4444;
-  --warning:#f59e0b;
-  --info:#3b82f6;
-  --radius:10px;
-}
-body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;font-size:14px;display:flex;height:100vh;overflow:hidden}
-.sidebar{width:56px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0}
-.logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-weight:700;font-size:13px;color:#fff}
-.nav-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:.15s;position:relative}
-.nav-icon:hover,.nav-icon.active{background:var(--green-dim);color:var(--green)}
-.nav-icon i{font-size:18px}
-.tooltip{position:absolute;left:48px;background:#1e2535;color:var(--text);font-size:12px;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:.15s;z-index:100;border:1px solid var(--border)}
-.nav-icon:hover .tooltip{opacity:1}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;background:var(--sidebar)}
-.page-title{font-size:16px;font-weight:600;flex:1}
-.page-sub{font-size:12px;color:var(--muted);margin-top:2px}
-.btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:.15s}
-.btn-primary{background:var(--green);color:#fff}
-.btn-primary:hover{background:var(--green-dark)}
-.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.btn-ghost:hover{color:var(--text);border-color:var(--muted)}
-.content{flex:1;overflow-y:auto;padding:20px}
-.page{display:none}
-.page.active{display:block}
-
-/* Dashboard */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
-.stat-label{font-size:12px;color:var(--muted);margin-bottom:6px}
-.stat-val{font-size:22px;font-weight:600}
-.stat-change{font-size:12px;margin-top:4px}
-.up{color:var(--green)}.down{color:var(--danger)}
-
-/* Invoice table */
-.section-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.tab{padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;cursor:pointer;color:var(--muted);background:transparent;transition:.15s}
-.tab:hover{color:var(--text)}
-.tab.active{background:var(--green);color:#fff;border-color:var(--green)}
-.search-bar{flex:1;max-width:320px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;outline:none}
-.search-bar:focus{border-color:var(--green)}
-.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:600px}
-th{text-align:left;font-size:11px;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;font-weight:500;white-space:nowrap}
-td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#ffffff05}
-.inv-link{color:var(--green);text-decoration:none;font-weight:500}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
-.badge-pending{background:#f59e0b22;color:var(--warning)}
-.badge-paid{background:#10b98122;color:var(--green)}
-.badge-overdue{background:#ef444422;color:var(--danger)}
-.badge-draft{background:#6b728022;color:#9ca3af}
-.badge-void{background:#6b728022;color:#6b7280}
-.badge-partial{background:#3b82f622;color:var(--info)}
-
-/* Products */
-.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.product-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;transition:.15s}
-.product-card:hover{border-color:var(--green)}
-.product-img{width:100%;height:80px;background:var(--green-dim);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
-.product-img i{font-size:28px;color:var(--green)}
-.product-name{font-weight:500;margin-bottom:4px}
-.product-price{color:var(--green);font-weight:600;font-size:15px}
-.product-stock{font-size:12px;color:var(--muted);margin-top:4px}
-
-/* Customers */
-.customer-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;transition:.15s}
-.customer-row:hover{border-color:var(--green)}
-.avatar{width:36px;height:36px;border-radius:50%;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:var(--green);flex-shrink:0}
-.cust-name{font-weight:500;font-size:13px}
-.cust-email{font-size:12px;color:var(--muted)}
-.cust-amount{margin-left:auto;text-align:right}
-.cust-invoices{font-size:12px;color:var(--muted)}
-
-/* Analytics */
-.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
-.chart-label{font-size:13px;font-weight:500;margin-bottom:12px;color:var(--muted)}
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.bar-name{width:80px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0}
-.bar-track{flex:1;background:#ffffff10;border-radius:4px;height:22px;overflow:hidden}
-.bar-fill{height:100%;background:var(--green);border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#fff;font-weight:500;transition:width .6s ease}
-.mini-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-
-/* Tracking */
-.track-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
-.track-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.track-id{font-weight:600;font-size:13px}
-.steps-row{display:flex;align-items:center}
-.step-item{display:flex;flex-direction:column;align-items:center;flex:1}
-.step-dot{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:4px;flex-shrink:0}
-.step-dot.done{background:var(--green)}
-.step-dot.done i{font-size:11px;color:#fff}
-.step-connector{flex:1;height:2px;background:var(--border);margin-bottom:18px}
-.step-connector.done{background:var(--green)}
-.step-label{font-size:10px;color:var(--muted);text-align:center}
-.step-label.done{color:var(--green)}
-
-/* Pending */
-.pending-summary{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;gap:30px;flex-wrap:wrap}
-.pending-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
-.pending-icon{width:36px;height:36px;border-radius:8px;background:#ef444422;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pending-icon i{color:var(--danger);font-size:18px}
-.pending-icon.warn{background:#f59e0b22}
-.pending-icon.warn i{color:var(--warning)}
-.pending-name{font-weight:500;font-size:13px}
-.pending-days{font-size:12px;color:var(--danger)}
-.pending-days.warn{color:var(--warning)}
-.pending-amount{margin-left:auto;font-weight:600;font-size:15px}
-
-/* Settings */
-.settings-group{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
-.settings-title{font-size:11px;font-weight:600;margin-bottom:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
-.settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.settings-row:last-child{border:none}
-.settings-key{font-size:13px}
-.settings-val{font-size:13px;color:var(--muted)}
-.toggle{width:36px;height:20px;background:var(--green);border-radius:10px;position:relative;cursor:pointer;flex-shrink:0;transition:.2s}
-.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;right:3px;transition:.2s}
-.toggle.off{background:var(--border)}
-.toggle.off::after{left:3px}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--muted)}
-
-@media(max-width:600px){
-  .stat-grid{grid-template-columns:1fr 1fr}
-  .product-grid{grid-template-columns:1fr 1fr}
-  .pending-summary{gap:16px}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK Fruits - Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 font-sans">
 
-<div class="sidebar">
-  <div class="logo">SF</div>
-  <div class="nav-icon active" onclick="showPage('dashboard',this)">
-    <i class="ti ti-layout-dashboard"></i><span class="tooltip">Dashboard</span>
-  </div>
-  <div class="nav-icon" onclick="showPage('invoices',this)">
-    <i class="ti ti-file-invoice"></i><span class="tooltip">Invoices</span>
-  </div>
-  <div class="nav-icon" onclick="showPage('products',this)">
-    <i class="ti ti-package"></i><span class="tooltip">Products</span>
-  </div>
-  <div class="nav-icon" onclick="showPage('customers',this)">
-    <i class="ti ti-users"></i><span class="tooltip">Customers</span>
-  </div>
-  <div class="nav-icon" onclick="showPage('analytics',this)">
-    <i class="ti ti-chart-bar"></i><span class="tooltip">Analytics</span>
-  </div>
-  <div class="nav-icon" onclick="showPage('tracking',this)">
-    <i class="ti ti-truck"></i><span class="tooltip">Tracking</span>
-  </div>
-  <div class="nav-icon" onclick="showPage('pending',this)">
-    <i class="ti ti-clock-exclamation"></i><span class="tooltip">Pending Balances</span>
-  </div>
-  <div class="nav-icon" style="margin-top:auto" onclick="showPage('settings',this)">
-    <i class="ti ti-settings"></i><span class="tooltip">Settings</span>
-  </div>
-</div>
-
-<div class="main">
-  <div class="topbar">
-    <div style="flex:1">
-      <div class="page-title" id="topTitle">Dashboard</div>
-      <div class="page-sub" id="topSub">Welcome back, Sinan</div>
-    </div>
-    <button class="btn btn-ghost"><i class="ti ti-bell"></i></button>
-    <div class="avatar">SC</div>
-  </div>
-
-  <div class="content">
-
-    <!-- DASHBOARD -->
-    <div class="page active" id="page-dashboard">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-label">Total Revenue</div>
-          <div class="stat-val">$24,580</div>
-          <div class="stat-change up"><i class="ti ti-trending-up" style="font-size:11px"></i> 12% this month</div>
+    <header class="bg-emerald-600 text-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-lemon text-yellow-300"></i> OK Fruits Dashboard
+            </h1>
+            <div id="connection-status" class="bg-emerald-700 px-3 py-1 rounded-full text-xs flex items-center gap-2 font-medium">
+                <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span> Firebase Connected
+            </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Invoices Sent</div>
-          <div class="stat-val">53</div>
-          <div class="stat-change up"><i class="ti ti-trending-up" style="font-size:11px"></i> 8 new this week</div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6 max-w-7xl space-y-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-4 bg-emerald-50 text-emerald-600 rounded-lg text-2xl"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 uppercase">Total Invoices</h3>
+                    <p id="count-invoices" class="text-2xl font-bold text-gray-900">...</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-4 bg-orange-50 text-orange-600 rounded-lg text-2xl"><i class="fa-solid fa-apple-whole"></i></div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 uppercase">Active Products</h3>
+                    <p id="count-products" class="text-2xl font-bold text-gray-900">...</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-4 bg-blue-50 text-blue-600 rounded-lg text-2xl"><i class="fa-solid fa-users"></i></div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 uppercase">Registered Customers</h3>
+                    <p id="count-customers" class="text-2xl font-bold text-gray-900">...</p>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Pending Amount</div>
-          <div class="stat-val" style="color:var(--warning)">$6,320</div>
-          <div class="stat-change down">3 overdue invoices</div>
+
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-4" aria-label="Tabs">
+                <button onclick="switchTab('tab-invoices')" class="tab-btn px-4 py-2 font-medium text-sm border-b-2 border-emerald-600 text-emerald-600" id="btn-tab-invoices">
+                    <i class="fa-solid fa-file-invoice mr-2"></i>Invoices
+                </button>
+                <button onclick="switchTab('tab-products')" class="tab-btn px-4 py-2 font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent" id="btn-tab-products">
+                    <i class="fa-solid fa-box mr-2"></i>Products & Inventory
+                </button>
+                <button onclick="switchTab('tab-customers')" class="tab-btn px-4 py-2 font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent" id="btn-tab-customers">
+                    <i class="fa-solid fa-user-group mr-2"></i>Customers
+                </button>
+            </nav>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Active Customers</div>
-          <div class="stat-val">28</div>
-          <div class="stat-change up"><i class="ti ti-trending-up" style="font-size:11px"></i> 4 new this month</div>
-        </div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-label">Revenue — last 6 months</div>
-        <div class="bar-row"><span class="bar-name">Jan</span><div class="bar-track"><div class="bar-fill" style="width:55%">$3.1k</div></div></div>
-        <div class="bar-row"><span class="bar-name">Feb</span><div class="bar-track"><div class="bar-fill" style="width:70%">$4.0k</div></div></div>
-        <div class="bar-row"><span class="bar-name">Mar</span><div class="bar-track"><div class="bar-fill" style="width:45%">$2.6k</div></div></div>
-        <div class="bar-row"><span class="bar-name">Apr</span><div class="bar-track"><div class="bar-fill" style="width:80%">$4.6k</div></div></div>
-        <div class="bar-row"><span class="bar-name">May</span><div class="bar-track"><div class="bar-fill" style="width:65%">$3.7k</div></div></div>
-        <div class="bar-row"><span class="bar-name">Jun</span><div class="bar-track"><div class="bar-fill" style="width:90%">$5.2k</div></div></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-label">Recent invoices</div>
-        <div class="table-wrap">
-          <table>
-            <tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Status</th></tr>
-            <tr><td><a class="inv-link" href="#">INV-0053</a></td><td>Fatima Al-Hassan</td><td>$620</td><td><span class="badge badge-overdue">Overdue</span></td></tr>
-            <tr><td><a class="inv-link" href="#">INV-0052</a></td><td>Emeka Stores Ltd</td><td>$1,850</td><td><span class="badge badge-pending">Pending</span></td></tr>
-            <tr><td><a class="inv-link" href="#">INV-0051</a></td><td>Ngozi Adeyemi</td><td>$240</td><td><span class="badge badge-paid">Paid</span></td></tr>
-          </table>
-        </div>
-      </div>
-    </div>
 
-    <!-- INVOICES -->
-    <div class="page" id="page-invoices">
-      <div class="section-head">
-        <input class="search-bar" placeholder="Search by invoice #, customer…">
-        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost"><i class="ti ti-download"></i> Export</button>
-          <button class="btn btn-primary"><i class="ti ti-plus"></i> New Invoice</button>
-        </div>
-      </div>
-      <div class="filter-tabs">
-        <button class="tab active" onclick="filterTab(this)">All 12</button>
-        <button class="tab" onclick="filterTab(this)">Pending 3</button>
-        <button class="tab" onclick="filterTab(this)">Overdue 1</button>
-        <button class="tab" onclick="filterTab(this)">Partial 1</button>
-        <button class="tab" onclick="filterTab(this)">Paid 5</button>
-        <button class="tab" onclick="filterTab(this)">Draft 1</button>
-        <button class="tab" onclick="filterTab(this)">Void 1</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <tr><th><input type="checkbox"></th><th>Invoice #</th><th>Customer</th><th>Issue Date</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Balance</th></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0053</a></td><td>Fatima Al-Hassan</td><td>06/13/2026</td><td>06/20/2026</td><td>$620</td><td>—</td><td style="color:var(--danger)">$620</td></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0052</a></td><td>Emeka Stores Ltd</td><td>06/13/2026</td><td>06/27/2026</td><td>$1,850</td><td>—</td><td style="color:var(--danger)">$1,850</td></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0051</a></td><td>Ngozi Adeyemi</td><td>06/09/2026</td><td>06/23/2026</td><td>$240</td><td style="color:var(--green)">$240</td><td style="color:var(--green)">Cleared</td></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0050</a></td><td>Kofi Mensah</td><td>06/05/2026</td><td>06/19/2026</td><td>$980</td><td style="color:var(--green)">$980</td><td style="color:var(--green)">Cleared</td></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0049</a></td><td>Amara Diallo</td><td>06/01/2026</td><td>06/15/2026</td><td>$450</td><td>$200</td><td style="color:var(--warning)">$250</td></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0048</a></td><td>Fatima Al-Hassan</td><td>05/28/2026</td><td>06/11/2026</td><td>$310</td><td style="color:var(--green)">$310</td><td style="color:var(--green)">Cleared</td></tr>
-          <tr><td><input type="checkbox"></td><td><a class="inv-link" href="#">INV-0047</a></td><td>Emeka Stores Ltd</td><td>05/20/2026</td><td>06/03/2026</td><td>$2,100</td><td style="color:var(--green)">$2,100</td><td style="color:var(--green)">Cleared</td></tr>
-        </table>
-      </div>
-    </div>
+        <section id="tab-invoices" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-semibold mb-4 text-gray-900"><i class="fa-solid fa-plus-circle text-emerald-600 mr-2"></i>Create New Invoice</h2>
+                <form id="invoice-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Customer Name</label>
+                        <input type="text" id="inv-customer" required placeholder="Ex: Joseph" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Fruit Item / Product</label>
+                        <input type="text" id="inv-product" required placeholder="Ex: Premium Mangoes" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Total Amount ($)</label>
+                        <input type="number" id="inv-amount" required placeholder="0.00" step="0.01" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm">
+                        <i class="fa-solid fa-check mr-2"></i>Save Invoice
+                    </button>
+                </form>
+            </div>
 
-    <!-- PRODUCTS -->
-    <div class="page" id="page-products">
-      <div class="section-head" style="margin-bottom:16px">
-        <input class="search-bar" placeholder="Search products…">
-        <button class="btn btn-primary" style="margin-left:auto"><i class="ti ti-plus"></i> Add Product</button>
-      </div>
-      <div class="product-grid">
-        <div class="product-card"><div class="product-img"><i class="ti ti-shirt"></i></div><div class="product-name">Premium T-Shirt</div><div class="product-price">$29.99</div><div class="product-stock">In stock: 142 units</div></div>
-        <div class="product-card"><div class="product-img"><i class="ti ti-headphones"></i></div><div class="product-name">Wireless Headphones</div><div class="product-price">$89.00</div><div class="product-stock">In stock: 38 units</div></div>
-        <div class="product-card"><div class="product-img"><i class="ti ti-device-watch"></i></div><div class="product-name">Smart Watch</div><div class="product-price">$149.00</div><div class="product-stock" style="color:var(--warning)">Low stock: 7 units</div></div>
-        <div class="product-card"><div class="product-img"><i class="ti ti-backpack"></i></div><div class="product-name">Canvas Backpack</div><div class="product-price">$54.99</div><div class="product-stock">In stock: 65 units</div></div>
-        <div class="product-card"><div class="product-img"><i class="ti ti-sunglasses"></i></div><div class="product-name">Sunglasses Pro</div><div class="product-price">$39.00</div><div class="product-stock" style="color:var(--danger)">Out of stock</div></div>
-        <div class="product-card"><div class="product-img"><i class="ti ti-shoe"></i></div><div class="product-name">Running Shoes</div><div class="product-price">$110.00</div><div class="product-stock">In stock: 29 units</div></div>
-      </div>
-    </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b bg-gray-50 font-semibold text-gray-700">Recent Invoice Records</div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 text-xs uppercase font-semibold">
+                                <th class="p-4">Date</th>
+                                <th class="p-4">Customer</th>
+                                <th class="p-4">Product Details</th>
+                                <th class="p-4 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoices-list" class="divide-y text-sm">
+                            <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading live database data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-    <!-- CUSTOMERS -->
-    <div class="page" id="page-customers">
-      <div class="section-head" style="margin-bottom:16px">
-        <input class="search-bar" placeholder="Search customers…">
-        <button class="btn btn-primary" style="margin-left:auto"><i class="ti ti-plus"></i> Add Customer</button>
-      </div>
-      <div class="customer-row"><div class="avatar">FA</div><div><div class="cust-name">Fatima Al-Hassan</div><div class="cust-email">fatima@alhassan.com</div></div><div class="cust-amount"><div style="font-weight:600;color:var(--danger)">$620</div><div class="cust-invoices">2 invoices</div></div></div>
-      <div class="customer-row"><div class="avatar">EL</div><div><div class="cust-name">Emeka Stores Ltd</div><div class="cust-email">info@emekastores.com</div></div><div class="cust-amount"><div style="font-weight:600;color:var(--danger)">$1,850</div><div class="cust-invoices">5 invoices</div></div></div>
-      <div class="customer-row"><div class="avatar">NA</div><div><div class="cust-name">Ngozi Adeyemi</div><div class="cust-email">ngozi.a@gmail.com</div></div><div class="cust-amount"><div style="font-weight:600;color:var(--green)">Cleared</div><div class="cust-invoices">3 invoices</div></div></div>
-      <div class="customer-row"><div class="avatar">KM</div><div><div class="cust-name">Kofi Mensah</div><div class="cust-email">kofi@mensah.gh</div></div><div class="cust-amount"><div style="font-weight:600;color:var(--green)">Cleared</div><div class="cust-invoices">4 invoices</div></div></div>
-      <div class="customer-row"><div class="avatar">AD</div><div><div class="cust-name">Amara Diallo</div><div class="cust-email">amara.d@business.ml</div></div><div class="cust-amount"><div style="font-weight:600;color:var(--warning)">$250</div><div class="cust-invoices">1 invoice</div></div></div>
-    </div>
+        <section id="tab-products" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-semibold mb-4 text-gray-900"><i class="fa-solid fa-circle-plus text-orange-600 mr-2"></i>Add Inventory Product</h2>
+                <form id="product-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Fruit Variety</label>
+                        <input type="text" id="prod-name" required placeholder="Ex: Red Apple" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Stock Quantity (KG/Boxes)</label>
+                        <input type="number" id="prod-stock" required placeholder="Ex: 150" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Price per Unit ($)</label>
+                        <input type="number" id="prod-price" required placeholder="0.00" step="0.01" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm">
+                        <i class="fa-solid fa-plus mr-2"></i>Add Product
+                    </button>
+                </form>
+            </div>
 
-    <!-- ANALYTICS -->
-    <div class="page" id="page-analytics">
-      <div class="mini-stat-row">
-        <div class="stat-card"><div class="stat-label">Avg invoice value</div><div class="stat-val">$464</div></div>
-        <div class="stat-card"><div class="stat-label">Collection rate</div><div class="stat-val" style="color:var(--green)">78%</div></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-label">Revenue by customer</div>
-        <div class="bar-row"><span class="bar-name">Emeka</span><div class="bar-track"><div class="bar-fill" style="width:90%">$4,200</div></div></div>
-        <div class="bar-row"><span class="bar-name">Fatima</span><div class="bar-track"><div class="bar-fill" style="width:60%">$2,800</div></div></div>
-        <div class="bar-row"><span class="bar-name">Kofi</span><div class="bar-track"><div class="bar-fill" style="width:45%">$2,100</div></div></div>
-        <div class="bar-row"><span class="bar-name">Ngozi</span><div class="bar-track"><div class="bar-fill" style="width:30%">$1,400</div></div></div>
-        <div class="bar-row"><span class="bar-name">Amara</span><div class="bar-track"><div class="bar-fill" style="width:20%">$940</div></div></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-label">Invoice status breakdown</div>
-        <div class="bar-row"><span class="bar-name">Paid</span><div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--green)">5</div></div></div>
-        <div class="bar-row"><span class="bar-name">Pending</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--warning)">3</div></div></div>
-        <div class="bar-row"><span class="bar-name">Overdue</span><div class="bar-track"><div class="bar-fill" style="width:8%;background:var(--danger)">1</div></div></div>
-        <div class="bar-row"><span class="bar-name">Draft</span><div class="bar-track"><div class="bar-fill" style="width:8%;background:#6b7280">1</div></div></div>
-      </div>
-    </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b bg-gray-50 font-semibold text-gray-700">Current Fruit Inventory Stock</div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 text-xs uppercase font-semibold">
+                                <th class="p-4">Item Name</th>
+                                <th class="p-4">Available Stock</th>
+                                <th class="p-4 text-right">Price Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-list" class="divide-y text-sm">
+                            <tr><td colspan="3" class="p-4 text-center text-gray-400">Loading item stock metrics...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-    <!-- TRACKING -->
-    <div class="page" id="page-tracking">
-      <div class="track-card">
-        <div class="track-head"><span class="track-id">Order #ORD-0021 — Fatima Al-Hassan</span><span class="badge badge-pending">In Transit</span></div>
-        <div class="steps-row">
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Ordered</div></div>
-          <div class="step-connector done"></div>
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Packed</div></div>
-          <div class="step-connector done"></div>
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Shipped</div></div>
-          <div class="step-connector"></div>
-          <div class="step-item"><div class="step-dot"></div><div class="step-label">Delivered</div></div>
-        </div>
-      </div>
-      <div class="track-card">
-        <div class="track-head"><span class="track-id">Order #ORD-0019 — Kofi Mensah</span><span class="badge badge-paid">Delivered</span></div>
-        <div class="steps-row">
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Ordered</div></div>
-          <div class="step-connector done"></div>
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Packed</div></div>
-          <div class="step-connector done"></div>
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Shipped</div></div>
-          <div class="step-connector done"></div>
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Delivered</div></div>
-        </div>
-      </div>
-      <div class="track-card">
-        <div class="track-head"><span class="track-id">Order #ORD-0018 — Amara Diallo</span><span class="badge badge-draft">Packed</span></div>
-        <div class="steps-row">
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Ordered</div></div>
-          <div class="step-connector done"></div>
-          <div class="step-item"><div class="step-dot done"><i class="ti ti-check"></i></div><div class="step-label done">Packed</div></div>
-          <div class="step-connector"></div>
-          <div class="step-item"><div class="step-dot"></div><div class="step-label">Shipped</div></div>
-          <div class="step-connector"></div>
-          <div class="step-item"><div class="step-dot"></div><div class="step-label">Delivered</div></div>
-        </div>
-      </div>
-    </div>
+        <section id="tab-customers" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-semibold mb-4 text-gray-900"><i class="fa-solid fa-user-plus text-blue-600 mr-2"></i>Register New Customer</h2>
+                <form id="customer-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Full Name</label>
+                        <input type="text" id="cust-name" required placeholder="Ex: Alan Walker" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Phone / Contact</label>
+                        <input type="tel" id="cust-phone" required placeholder="Ex: 9876543210" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Location City</label>
+                        <input type="text" id="cust-city" required placeholder="Ex: Kochi" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm">
+                        <i class="fa-solid fa-user-check mr-2"></i>Save Account
+                    </button>
+                </form>
+            </div>
 
-    <!-- PENDING BALANCES -->
-    <div class="page" id="page-pending">
-      <div class="pending-summary">
-        <div><div style="font-size:12px;color:var(--muted)">Total pending</div><div style="font-size:22px;font-weight:600;color:var(--danger)">$6,320</div></div>
-        <div><div style="font-size:12px;color:var(--muted)">Overdue</div><div style="font-size:22px;font-weight:600;color:var(--danger)">$620</div></div>
-        <div><div style="font-size:12px;color:var(--muted)">Due soon</div><div style="font-size:22px;font-weight:600;color:var(--warning)">$2,100</div></div>
-        <div><div style="font-size:12px;color:var(--muted)">Partial</div><div style="font-size:22px;font-weight:600;color:var(--info)">$250</div></div>
-      </div>
-      <div class="pending-item">
-        <div class="pending-icon"><i class="ti ti-alert-triangle"></i></div>
-        <div><div class="pending-name">Fatima Al-Hassan</div><div class="pending-days">7 days overdue · INV-0053</div></div>
-        <div class="pending-amount" style="color:var(--danger)">$620</div>
-      </div>
-      <div class="pending-item">
-        <div class="pending-icon warn"><i class="ti ti-clock"></i></div>
-        <div><div class="pending-name">Emeka Stores Ltd</div><div class="pending-days warn">Due in 14 days · INV-0052</div></div>
-        <div class="pending-amount" style="color:var(--warning)">$1,850</div>
-      </div>
-      <div class="pending-item">
-        <div class="pending-icon warn"><i class="ti ti-clock"></i></div>
-        <div><div class="pending-name">Amara Diallo</div><div class="pending-days warn">Partial payment · INV-0049</div></div>
-        <div class="pending-amount" style="color:var(--info)">$250</div>
-      </div>
-    </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b bg-gray-50 font-semibold text-gray-700">Customer Directory</div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 text-xs uppercase font-semibold">
+                                <th class="p-4">Customer Name</th>
+                                <th class="p-4">Phone Number</th>
+                                <th class="p-4 text-right">Location City</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-list" class="divide-y text-sm">
+                            <tr><td colspan="3" class="p-4 text-center text-gray-400">Loading client directory...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-    <!-- SETTINGS -->
-    <div class="page" id="page-settings">
-      <div class="settings-group">
-        <div class="settings-title">Business info</div>
-        <div class="settings-row"><span class="settings-key">Business name</span><span class="settings-val">ShopFlow Business</span></div>
-        <div class="settings-row"><span class="settings-key">Email</span><span class="settings-val">admin@shopflow.com</span></div>
-        <div class="settings-row"><span class="settings-key">Currency</span><span class="settings-val">USD ($)</span></div>
-        <div class="settings-row"><span class="settings-key">Time zone</span><span class="settings-val">Asia/Kolkata (IST)</span></div>
-      </div>
-      <div class="settings-group">
-        <div class="settings-title">Notifications</div>
-        <div class="settings-row"><span class="settings-key">Invoice overdue alerts</span><div class="toggle" onclick="this.classList.toggle('off')"></div></div>
-        <div class="settings-row"><span class="settings-key">Payment received</span><div class="toggle" onclick="this.classList.toggle('off')"></div></div>
-        <div class="settings-row"><span class="settings-key">Low stock alerts</span><div class="toggle off" onclick="this.classList.toggle('off')"></div></div>
-        <div class="settings-row"><span class="settings-key">Weekly summary email</span><div class="toggle off" onclick="this.classList.toggle('off')"></div></div>
-      </div>
-      <div class="settings-group">
-        <div class="settings-title">Integrations</div>
-        <div class="settings-row"><span class="settings-key">GitHub</span><span class="settings-val" style="color:var(--green)">Connected ✓</span></div>
-        <div class="settings-row"><span class="settings-key">Vercel</span><span class="settings-val" style="color:var(--green)">Connected ✓</span></div>
-        <div class="settings-row"><span class="settings-key">Supabase</span><span class="settings-val" style="color:var(--muted)">Not connected</span></div>
-      </div>
-    </div>
+    </main>
 
-  </div>
-</div>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<script>
-const titles={
-  dashboard:['Dashboard','Welcome back, Sinan'],
-  invoices:['Invoice Management','Track, create, and manage all invoices'],
-  products:['Products & Inventory','Manage your product catalog'],
-  customers:['Customers','View and manage your customer base'],
-  analytics:['Analytics','Sales performance and insights'],
-  tracking:['Order Tracking','Track deliveries in real time'],
-  pending:['Pending Balances','Outstanding and overdue payments'],
-  settings:['Settings','Configure your ShopFlow account']
-};
+    <script>
+        // Production web app's configuration block injected here
+        const firebaseConfig = {
+            apiKey: "AIzaSyCspHtx90U4tS6oxercAfHGn2tEAJM0x-o",
+            authDomain: "ok-fruits.firebaseapp.com",
+            projectId: "ok-fruits",
+            storageBucket: "ok-fruits.firebasestorage.app",
+            messagingSenderId: "6853965407",
+            appId: "1:6853965407:web:2314c38481710d55020dea"
+        };
 
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-icon').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
-  document.getElementById('topTitle').textContent = titles[id][0];
-  document.getElementById('topSub').textContent = titles[id][1];
-}
+        // Standard script initializers
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-function filterTab(el) {
-  el.closest('.filter-tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
-</script>
+        // Application Tab Switching Mechanics
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-emerald-600', 'border-emerald-600');
+                el.classList.add('text-gray-500', 'border-transparent');
+            });
+            
+            const targetedBtnMap = {
+                'tab-invoices': 'btn-tab-invoices',
+                'tab-products': 'btn-tab-products',
+                'tab-customers': 'btn-tab-customers'
+            };
+            
+            const activeBtn = document.getElementById(targetedBtnMap[tabId]);
+            activeBtn.classList.remove('text-gray-500', 'border-transparent');
+            activeBtn.classList.add('text-emerald-600', 'border-emerald-600');
+        }
+
+        // ==========================================
+        // DATA SUBSCRIPTION ENGINES (REAL-TIME SYNC)
+        // ==========================================
+
+        // Listen for Invoices Changes
+        db.collection("invoices").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+            const listContainer = document.getElementById("invoices-list");
+            document.getElementById("count-invoices").innerText = snapshot.size;
+            
+            if (snapshot.empty) {
+                listContainer.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No invoices generated yet.</td></tr>`;
+                return;
+            }
+
+            let htmlContent = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const formattedDate = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : 'Just Now';
+                htmlContent += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4 text-gray-500">${formattedDate}</td>
+                        <td class="p-4 font-semibold text-gray-900">${data.customer}</td>
+                        <td class="p-4 text-gray-600">${data.product}</td>
+                        <td class="p-4 text-right font-bold text-emerald-600">$${parseFloat(data.amount).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            listContainer.innerHTML = htmlContent;
+        }, (error) => console.error("Invoice sync problem:", error));
+
+        // Listen for Products Changes
+        db.collection("products").onSnapshot((snapshot) => {
+            const listContainer = document.getElementById("products-list");
+            document.getElementById("count-products").innerText = snapshot.size;
+
+            if (snapshot.empty) {
+                listContainer.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">No items in inventory.</td></tr>`;
+                return;
+            }
+
+            let htmlContent = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                htmlContent += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4 font-semibold text-gray-900">${data.name}</td>
+                        <td class="p-4"><span class="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-bold">${data.stock} KG</span></td>
+                        <td class="p-4 text-right font-bold text-gray-700">$${parseFloat(data.price).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            listContainer.innerHTML = htmlContent;
+        }, (error) => console.error("Product sync problem:", error));
+
+        // Listen for Customers Changes
+        db.collection("customers").onSnapshot((snapshot) => {
+            const listContainer = document.getElementById("customers-list");
+            document.getElementById("count-customers").innerText = snapshot.size;
+
+            if (snapshot.empty) {
+                listContainer.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">No customers registered yet.</td></tr>`;
+                return;
+            }
+
+            let htmlContent = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                htmlContent += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4 font-semibold text-gray-900">${data.name}</td>
+                        <td class="p-4 text-gray-600">${data.phone}</td>
+                        <td class="p-4 text-right text-gray-600">${data.city}</td>
+                    </tr>
+                `;
+            });
+            listContainer.innerHTML = htmlContent;
+        }, (error) => console.error("Customer sync problem:", error));
+
+
+        // ==========================================
+        // DATA TRANSACTION SUBMISSIONS (FORM WRITES)
+        // ==========================================
+
+        // Save Invoice Data Engine
+        document.getElementById("invoice-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            try {
+                await db.collection("invoices").add({
+                    customer: document.getElementById("inv-customer").value,
+                    product: document.getElementById("inv-product").value,
+                    amount: parseFloat(document.getElementById("inv-amount").value),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById("invoice-form").reset();
+            } catch (err) {
+                alert("Writing invoice error: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Save Product Inventory Engine
+        document.getElementById("product-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            try {
+                await db.collection("products").add({
+                    name: document.getElementById("prod-name").value,
+                    stock: parseInt(document.getElementById("prod-stock").value),
+                    price: parseFloat(document.getElementById("prod-price").value)
+                });
+                document.getElementById("product-form").reset();
+            } catch (err) {
+                alert("Writing product error: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Save Customers Engine
+        document.getElementById("customer-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            try {
+                await db.collection("customers").add({
+                    name: document.getElementById("cust-name").value,
+                    phone: document.getElementById("cust-phone").value,
+                    city: document.getElementById("cust-city").value
+                });
+                document.getElementById("customer-form").reset();
+            } catch (err) {
+                alert("Writing customer error: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
