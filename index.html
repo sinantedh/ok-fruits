@@ -92,6 +92,38 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-[#F4F5FA] via-[#E9ECF8] to-[#F1F3FC] text-gray-900 min-h-screen antialiased font-ui">
+    <!-- VISUAL ERROR BOUNDARY CONSOLE -->
+    <div id="debug-err-console" style="display:none; background:#fee2e2; color:#b91c1c; padding:15px; border-bottom:4px solid #ef4444; font-family:monospace; font-size:12px; z-index:999999; position:relative;">
+        <div style="font-weight:bold; font-size:14px; margin-bottom:5px;">⚠️ JavaScript Error Detected:</div>
+        <pre id="debug-err-text" style="white-space:pre-wrap; margin:0; background:#fef2f2; padding:10px; border:1px solid #fca5a5; border-radius: 8px;"></pre>
+        <div style="margin-top:8px; font-size:10px; color:#991b1b;">Please capture a screenshot of this error message and send it for troubleshooting.</div>
+    </div>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            var consoleDiv = document.getElementById('debug-err-console');
+            var textEl = document.getElementById('debug-err-text');
+            if (consoleDiv && textEl) {
+                consoleDiv.style.display = 'block';
+                var filename = url ? url.substring(url.lastIndexOf('/') + 1) : 'unknown';
+                textEl.textContent += msg + '\n  at ' + filename + ' (line ' + line + ', col ' + col + ')\n';
+                if (error && error.stack) {
+                    textEl.textContent += '  Stack: ' + error.stack + '\n';
+                }
+            }
+            return false;
+        };
+        window.onunhandledrejection = function(event) {
+            var consoleDiv = document.getElementById('debug-err-console');
+            var textEl = document.getElementById('debug-err-text');
+            if (consoleDiv && textEl) {
+                consoleDiv.style.display = 'block';
+                textEl.textContent += 'Unhandled Promise Rejection: ' + event.reason + '\n';
+                if (event.reason && event.reason.stack) {
+                    textEl.textContent += '  Stack: ' + event.reason.stack + '\n';
+                }
+            }
+        };
+    </script>
     <script>
         // Always hide the login gate visually on startup for local editing/testing
         document.write('<style id="splash-hide-gate">#login-gate { display: none !important; }</style>');
@@ -229,7 +261,7 @@
                 <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[160%] h-24 rounded-t-[100%] bg-white/30 pointer-events-none z-0"></div>
                 
                 <div class="flex justify-between items-start w-full relative z-10">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#5D5FEF]">Total pending</span>
+                    <span id="pending-label" class="text-[10px] font-extrabold uppercase tracking-wider text-[#5D5FEF]">Total pending</span>
                     <div id="pending-arrow-container" class="bg-[#CCFF00] text-black h-6 w-6 rounded-full flex items-center justify-center text-xs shadow-sm card-transition">
                         <i id="pending-arrow-icon" class="fa-solid fa-chevron-up"></i>
                     </div>
@@ -364,8 +396,8 @@
     </div>
 
     <!-- DATA ENTRY & EDIT MODAL (Centered Zoom-in Modal) -->
-    <div id="data-modal" class="fixed inset-0 bg-neutral-950/50 z-50 flex items-center justify-center hidden backdrop-blur-xs modal-overlay animate-fade-in" onclick="closeModalOnOverlayClick(event)">
-        <div class="modal-panel bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl no-scrollbar mx-4">
+    <div id="data-modal" class="fixed inset-0 bg-neutral-950/50 z-50 flex justify-center items-start sm:items-center overflow-y-auto p-4 hidden backdrop-blur-xs modal-overlay animate-fade-in" onclick="closeModalOnOverlayClick(event)">
+        <div class="modal-panel bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 my-auto shadow-2xl mx-4 max-h-[92vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 id="data-modal-title" class="text-base font-extrabold text-neutral-900 tracking-wider flex items-center font-header"><i class="fa-solid fa-circle-plus text-[#5D5FEF] mr-2"></i>NEW DATA</h3>
                 <button onclick="closeModal('data-modal')" class="text-neutral-400 hover:text-red-500 transition-all"><i class="fa-solid fa-circle-xmark text-xl"></i></button>
@@ -374,7 +406,7 @@
             <div id="data-modal-tabs" class="grid grid-cols-3 gap-2 p-1 bg-[#5D5FEF]/10 rounded-2xl text-[10px] font-black text-center uppercase tracking-wider">
                 <button type="button" onclick="toggleSubform('form-inv')" id="btn-sub-inv" class="bg-white text-black py-2.5 rounded-xl shadow-xs transition-all">NEW INVOICE</button>
                 <button type="button" onclick="toggleSubform('form-prod')" id="btn-sub-prod" class="text-neutral-600 hover:text-neutral-900 py-2.5 rounded-xl transition-all">PRODUCT</button>
-                <button type="button" onclick="toggleSubform('form-cust')" id="btn-sub-cust" class="text-neutral-600 hover:text-neutral-900 py-2.5 rounded-xl transition-all">CLIENT</button>
+                <button type="button" onclick="toggleSubform('form-cust')" id="btn-sub-cust" class="text-neutral-600 hover:text-neutral-900 py-2.5 rounded-xl transition-all">SETTLEMENTS</button>
             </div>
             
             <form id="invoice-form" class="subform-box space-y-4">
@@ -521,24 +553,106 @@
                 <button type="submit" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white py-4 rounded-full font-bold text-xs uppercase tracking-widest transition-all card-transition">Add Stock Asset</button>
             </form>
             
-            <form id="customer-form" class="subform-box hidden space-y-4">
-                <input type="text" id="cust-name" required placeholder="Trader Full Name" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5D5FEF]">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="tel" id="cust-phone" required placeholder="Contact Mobile Number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium font-num focus:ring-2 focus:ring-[#5D5FEF]">
-                    <input type="text" id="cust-city" required placeholder="Hub Location City" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5D5FEF]">
+            <!-- Settlements Container (Record Settlement / Client Profile) -->
+            <div id="customer-form-container" class="subform-box hidden space-y-4">
+                <!-- Inner sub-tabs for Settlements vs Client Profile -->
+                <div class="grid grid-cols-2 gap-2 p-1 bg-[#5D5FEF]/5 rounded-xl text-[9px] font-extrabold text-center uppercase tracking-wider mb-2">
+                    <button type="button" onclick="toggleSettlementSubTab('settle')" id="btn-settle-tab" class="bg-white text-black py-2 rounded-lg shadow-2xs transition-all">Record Settlement</button>
+                    <button type="button" onclick="toggleSettlementSubTab('profile')" id="btn-profile-tab" class="text-neutral-500 hover:text-neutral-800 py-2 rounded-lg transition-all">Client Profile</button>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">Assigned Credit Account Limit (₹)</label>
-                    <input type="number" id="cust-credit-limit" required placeholder="Ex: 50000" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium font-num focus:ring-2 focus:ring-[#5D5FEF]">
-                </div>
-                <button type="submit" id="cust-submit-btn" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white py-4 rounded-full font-bold text-xs uppercase tracking-widest transition-all card-transition">Save Client Profile</button>
-            </form>
+                
+                <!-- 1. RECORD SETTLEMENT FORM -->
+                <form id="settlement-form" class="settlement-sub-box space-y-4">
+                    <div class="relative">
+                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">SELECT CUSTOMER</label>
+                        <div class="relative">
+                            <input type="text" id="settle-customer-input" required autocomplete="off" oninput="handleSettleCustomerAutocomplete(this); updateSettleCustomerInfo();" onchange="updateSettleCustomerInfo()" placeholder="Select or type customer name..." class="w-full pl-4 pr-10 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
+                            <button type="button" onclick="toggleSettleCustomerDropdown()" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-all cursor-pointer" title="Show suggestions">
+                                <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <div id="settle-customer-suggestions-box" class="absolute z-[100] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-2xl shadow-2xl max-h-48 overflow-y-auto no-scrollbar hidden"></div>
+                    </div>
+                    
+                    <!-- CUSTOMER BALANCE & BOXES INFO CARD (shows after selecting a customer) -->
+                    <div id="settle-customer-info-card" class="hidden bg-gradient-to-r from-[#F8F9FE] to-[#EDEEFF] p-4 rounded-2xl border border-indigo-100 space-y-3 animate-fade-in">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-user-circle text-[#5D5FEF] text-sm"></i>
+                            <span id="settle-info-name" class="text-xs font-bold text-neutral-800 uppercase tracking-wider">—</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-white/80 p-2.5 rounded-xl border border-neutral-100">
+                                <span class="text-[8px] font-extrabold text-neutral-400 uppercase tracking-wider block">TOTAL INVOICES</span>
+                                <span id="settle-info-total-invoices" class="text-sm font-black text-neutral-900 font-num block mt-0.5">0</span>
+                            </div>
+                            <div class="bg-white/80 p-2.5 rounded-xl border border-neutral-100">
+                                <span class="text-[8px] font-extrabold text-neutral-400 uppercase tracking-wider block">TOTAL AMOUNT</span>
+                                <span id="settle-info-total-amount" class="text-sm font-black text-neutral-900 font-num block mt-0.5">₹0</span>
+                            </div>
+                            <div class="bg-white/80 p-2.5 rounded-xl border border-neutral-100">
+                                <span class="text-[8px] font-extrabold text-neutral-400 uppercase tracking-wider block">TOTAL PAID</span>
+                                <span id="settle-info-total-paid" class="text-sm font-black text-emerald-600 font-num block mt-0.5">₹0</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="bg-red-50/80 p-3 rounded-xl border border-red-100">
+                                <span class="text-[8px] font-extrabold text-red-500 uppercase tracking-wider block">OUTSTANDING BALANCE</span>
+                                <span id="settle-info-outstanding" class="text-lg font-black text-red-600 font-num block mt-0.5">₹0</span>
+                            </div>
+                            <div class="bg-amber-50/80 p-3 rounded-xl border border-amber-100">
+                                <span class="text-[8px] font-extrabold text-amber-600 uppercase tracking-wider block">PENDING BOXES</span>
+                                <span id="settle-info-pending-boxes" class="text-lg font-black text-amber-700 font-num block mt-0.5">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">NEW ADVANCE / PAYMENT (₹)</label>
+                            <input type="number" step="any" id="settle-amount" placeholder="0" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">BOXES GOT (RETURNED)</label>
+                            <input type="number" id="settle-boxes" placeholder="0" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">SETTLEMENT DATE</label>
+                            <input type="date" id="settle-date" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">NOTE / REMARK</label>
+                            <input type="text" id="settle-note" placeholder="Ex: Cash / Bank transfer / returned boxes" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white py-4 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-md card-transition">
+                        RECORD SETTLEMENT
+                    </button>
+                </form>
+                
+                <!-- 2. CLIENT PROFILE FORM -->
+                <form id="customer-form" class="settlement-sub-box hidden space-y-4">
+                    <input type="text" id="cust-name" required placeholder="Trader Full Name" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5D5FEF]">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="tel" id="cust-phone" required placeholder="Contact Mobile Number" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium font-num focus:ring-2 focus:ring-[#5D5FEF]">
+                        <input type="text" id="cust-city" required placeholder="Hub Location City" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#5D5FEF]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">Assigned Credit Account Limit (₹)</label>
+                        <input type="number" id="cust-credit-limit" required placeholder="Ex: 50000" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-medium font-num focus:ring-2 focus:ring-[#5D5FEF]">
+                    </div>
+                    <button type="submit" id="cust-submit-btn" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white py-4 rounded-full font-bold text-xs uppercase tracking-widest transition-all card-transition">Save Client Profile</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- CLIENT PROFILE DETAILS & HISTORY MODAL -->
-    <div id="customer-detail-modal" class="fixed inset-0 bg-neutral-950/60 z-50 flex items-end justify-center hidden p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 max-h-[85vh] overflow-y-auto shadow-2xl">
+    <div id="customer-detail-modal" class="fixed inset-0 bg-neutral-950/60 z-50 flex items-end justify-center hidden p-4 backdrop-blur-xs overflow-y-auto" onclick="if(event.target===this){closeModal('customer-detail-modal')}">
+        <div class="bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 max-h-[85vh] overflow-y-auto shadow-2xl" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-wider"><i class="fa-solid fa-user text-[#5D5FEF] mr-2"></i>CLIENT PROFILE</h3>
                 <button onclick="closeModal('customer-detail-modal')" class="text-neutral-400 hover:text-red-500"><i class="fa-solid fa-circle-xmark text-xl"></i></button>
@@ -563,12 +677,17 @@
                         <span id="cust-detail-limit" class="text-xs font-bold text-neutral-900 block font-num">₹0</span>
                     </div>
                 </div>
-                <div class="bg-red-50/50 p-4 rounded-2xl border border-red-100 flex justify-between items-center">
-                    <div>
-                        <span class="text-[9px] font-extrabold uppercase tracking-wider text-red-500 block">Current Outstanding Debt</span>
-                        <span id="cust-detail-debt" class="text-xl font-black text-red-600 font-num">₹0</span>
+                <div class="bg-red-50/50 p-4 rounded-2xl border border-red-100 flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider text-red-500 block">Current Outstanding Debt</span>
+                            <span id="cust-detail-debt" class="text-xl font-black text-red-600 font-num">₹0</span>
+                        </div>
                     </div>
-                    <button id="cust-detail-settle-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2.5 rounded-full transition-all">Settle Debt</button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="cust-detail-record-settle-btn" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white text-[10px] font-bold uppercase tracking-widest py-2.5 rounded-full transition-all shadow-xs text-center">Record Payment</button>
+                        <button id="cust-detail-settle-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-widest py-2.5 rounded-full transition-all text-center">Settle Debt</button>
+                    </div>
                 </div>
                 
                 <div>
@@ -582,8 +701,8 @@
     </div>
 
     <!-- RECORD PARTIAL PAYMENT MODAL -->
-    <div id="record-payment-modal" class="fixed inset-0 bg-neutral-950/50 z-50 flex items-center justify-center hidden backdrop-blur-xs modal-overlay animate-fade-in" onclick="closeModalOnPaymentOverlayClick(event)">
-        <div class="modal-panel bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl no-scrollbar mx-4">
+    <div id="record-payment-modal" class="fixed inset-0 bg-neutral-950/50 z-50 flex justify-center items-start sm:items-center overflow-y-auto p-4 hidden backdrop-blur-xs modal-overlay animate-fade-in" onclick="closeModalOnPaymentOverlayClick(event)">
+        <div class="modal-panel bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 my-auto shadow-2xl mx-4">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="text-base font-extrabold text-neutral-900 tracking-wider flex items-center font-header">
                     <i class="fa-solid fa-circle-dollar-to-slot text-[#5D5FEF] mr-2"></i>RECORD PAYMENT
@@ -891,9 +1010,208 @@
             messagingSenderId: "6853965407",
             appId: "1:6853965407:web:2314c38481710d55020dea"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+
+        // SETUP OFFLINE LOCAL MOCK MODE FALLBACK DATABASE
+        function setupMockFirebase() {
+            window.firebase = {
+                initializeApp: () => {
+                    console.log("Mock Firebase: initialized.");
+                },
+                auth: () => ({
+                    onAuthStateChanged: (callback) => {
+                        console.log("Mock Firebase: auth state listener active.");
+                        setTimeout(() => {
+                            callback({ email: 'sinanc.toall@gmail.com', displayName: 'OK Fruits Admin' });
+                        }, 200);
+                    },
+                    getRedirectResult: () => Promise.resolve({ user: null }),
+                    signOut: () => {
+                        console.log("Mock Firebase: signOut executed.");
+                        localStorage.removeItem('okFruitsLoggedIn');
+                        return Promise.resolve();
+                    }
+                }),
+                firestore: () => {
+                    const getCollection = (colName) => {
+                        const key = `mock_fs_${colName}`;
+                        const load = () => JSON.parse(localStorage.getItem(key) || '[]');
+                        const save = (data) => localStorage.setItem(key, JSON.stringify(data));
+                        
+                        // Seed default mock records if not exists
+                        if (colName === 'products' && load().length === 0) {
+                            save([
+                                { id: 'p1', name: 'Mango', stock: 120, price: 80 },
+                                { id: 'p2', name: 'Apple', stock: 50, price: 150 },
+                                { id: 'p3', name: 'Banana', stock: 200, price: 40 }
+                            ]);
+                        }
+                        if (colName === 'customers' && load().length === 0) {
+                            save([
+                                { id: 'c1', name: 'Sinan', phone: '9876543210', city: 'Kozhikode', creditLimit: 50000 },
+                                { id: 'c2', name: 'Ella', phone: '9876543211', city: 'Ernakulam', creditLimit: 30000 }
+                            ]);
+                        }
+                        if (colName === 'invoices' && load().length === 0) {
+                            save([
+                                {
+                                    id: 'inv1',
+                                    serialNo: 'INV-0001',
+                                    customer: 'Sinan',
+                                    status: 'pending',
+                                    product: 'Mango',
+                                    boxes: 10,
+                                    totalQuantityWeight: 100,
+                                    amount: 8000,
+                                    rate: 80,
+                                    advancePaid: 3000,
+                                    discount: 0,
+                                    oldBalance: 0,
+                                    description: 'Seed Data Delivery',
+                                    createdAt: { seconds: Math.floor(Date.now() / 1000) - 86400, nanoseconds: 0 }
+                                }
+                            ]);
+                        }
+                        
+                        return {
+                            orderBy: function() { return this; },
+                            where: function() { return this; },
+                            onSnapshot: function(onNext, onError) {
+                                const trigger = () => {
+                                    const items = load();
+                                    const snapshot = {
+                                        size: items.length,
+                                        forEach: (cb) => items.forEach(item => cb({ id: item.id, data: () => item })),
+                                        docChanges: () => []
+                                    };
+                                    onNext(snapshot);
+                                };
+                                trigger();
+                                const listener = (e) => {
+                                    if (e.key === key) trigger();
+                                };
+                                window.addEventListener('storage', listener);
+                                return () => window.removeEventListener('storage', listener);
+                            },
+                            get: async function() {
+                                const items = load();
+                                return {
+                                    empty: items.length === 0,
+                                    docs: items.map(item => ({ id: item.id, data: () => item })),
+                                    exists: items.length > 0,
+                                    forEach: (cb) => items.forEach(item => cb({ id: item.id, data: () => item }))
+                                };
+                            },
+                            doc: function(docId) {
+                                return {
+                                    get: async function() {
+                                        const items = load();
+                                        if (colName === 'counters' && docId === 'invoiceSerial') {
+                                            const invoices = JSON.parse(localStorage.getItem('mock_fs_invoices') || '[]');
+                                            return {
+                                                exists: true,
+                                                data: () => ({ current: invoices.length })
+                                            };
+                                        }
+                                        const found = items.find(i => i.id === docId);
+                                        return {
+                                            exists: !!found,
+                                            data: () => found
+                                        };
+                                    },
+                                    set: async function(data, options) {
+                                        let items = load();
+                                        const idx = items.findIndex(i => i.id === docId);
+                                        if (idx > -1) {
+                                            items[idx] = options && options.merge ? { ...items[idx], ...data } : data;
+                                        } else {
+                                            data.id = docId;
+                                            items.push(data);
+                                        }
+                                        save(items);
+                                        window.dispatchEvent(new StorageEvent('storage', { key: key }));
+                                    },
+                                    update: async function(data) {
+                                        let items = load();
+                                        const idx = items.findIndex(i => i.id === docId);
+                                        if (idx > -1) {
+                                            items[idx] = { ...items[idx], ...data };
+                                            save(items);
+                                            window.dispatchEvent(new StorageEvent('storage', { key: key }));
+                                        }
+                                    },
+                                    delete: async function() {
+                                        let items = load();
+                                        items = items.filter(i => i.id !== docId);
+                                        save(items);
+                                        window.dispatchEvent(new StorageEvent('storage', { key: key }));
+                                    }
+                                };
+                            },
+                            add: async function(data) {
+                                let items = load();
+                                const newId = 'mock_id_' + Math.random().toString(36).substring(2, 11);
+                                data.id = newId;
+                                items.push(data);
+                                save(items);
+                                window.dispatchEvent(new StorageEvent('storage', { key: key }));
+                                return { id: newId };
+                            }
+                        };
+                    };
+                    
+                    return {
+                        collection: getCollection,
+                        batch: () => ({
+                            delete: function(ref) { ref.delete(); return this; },
+                            update: function(ref, data) { ref.update(data); return this; },
+                            commit: async function() {}
+                        }),
+                        runTransaction: async function(updateFunction) {
+                            const transaction = {
+                                get: async (ref) => ref.get(),
+                                set: (ref, data) => ref.set(data),
+                                update: (ref, data) => ref.update(data)
+                            };
+                            return updateFunction(transaction);
+                        }
+                    };
+                }
+            };
+            window.firebase.firestore.Timestamp = {
+                fromDate: (date) => ({
+                    seconds: Math.floor(date.getTime() / 1000),
+                    nanoseconds: 0,
+                    toDate: () => date
+                })
+            };
+            window.firebase.firestore.FieldValue = {
+                serverTimestamp: () => ({
+                    seconds: Math.floor(Date.now() / 1000),
+                    nanoseconds: 0,
+                    toDate: () => new Date()
+                })
+            };
+        }
+
+        let db, auth;
+        try {
+            if (typeof firebase === 'undefined') {
+                throw new Error("Firebase compat SDK script failed to load. Please verify your internet connection.");
+            }
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (error) {
+            console.error("Firebase init failed, fallback to mock mode:", error);
+            setupMockFirebase();
+            db = firebase.firestore();
+            auth = firebase.auth();
+            
+            setTimeout(() => {
+                showToast("⚠️ running in local mock mode (offline/no internet)", "warning");
+                updateAuditTicker("⚠️ Mock Mode: Using local storage database. Changes are saved locally.");
+            }, 1000);
+        }
 
         // Handle redirect result errors if any on load (crucial for mobile redirect flows)
         auth.getRedirectResult().catch(err => {
@@ -1124,8 +1442,13 @@
             }
         }
 
-        // Firebase Auth State Listener (Bypassed temporarily for testing/editing)
-        auth.onAuthStateChanged(user => {
+        // Firebase Auth State Listener with robust fallback for local file:// protocols and iframe blocks
+        let appInitialized = false;
+        function initializeApp(user) {
+            if (appInitialized) return;
+            appInitialized = true;
+            console.log("Initializing OK Fruits application...");
+            
             currentAuthUser = user || { email: 'sinanc.toall@gmail.com', displayName: 'OK Fruits Admin' };
             isAdminUser = true; // Temporary bypass: Force Admin Access
             currentUserProfile.role = 'owner';
@@ -1133,8 +1456,11 @@
             localStorage.setItem('okFruitsLoggedIn', 'true');
 
             // Hide login, show dashboard
-            document.getElementById('login-gate').classList.add('hidden');
-            document.getElementById('dashboard-app').classList.remove('hidden');
+            const loginGate = document.getElementById('login-gate');
+            if (loginGate) loginGate.classList.add('hidden');
+            
+            const dashboardApp = document.getElementById('dashboard-app');
+            if (dashboardApp) dashboardApp.classList.remove('hidden');
 
             // Show footer nav
             const footer = document.querySelector('footer');
@@ -1146,7 +1472,24 @@
 
             // Apply role restrictions after a short delay for DOM to render
             setTimeout(applyRoleRestrictions, 300);
-        });
+        }
+
+        // Register the native firebase auth listener
+        try {
+            auth.onAuthStateChanged(user => {
+                initializeApp(user);
+            });
+        } catch (e) {
+            console.warn("Failed to register onAuthStateChanged listener, running fallback:", e);
+        }
+
+        // Fallback for sandboxed environments (file:// protocol) where auth listener never fires
+        setTimeout(() => {
+            if (!appInitialized) {
+                console.warn("Auth state check timed out or was blocked by browser sandbox. Initializing app with local admin session.");
+                initializeApp({ email: 'sinanc.toall@gmail.com', displayName: 'OK Fruits Admin' });
+            }
+        }, 800);
 
         // TOAST SYSTEM
         function showToast(message, type = "success") {
@@ -1239,6 +1582,8 @@
             document.getElementById("invoice-form").reset();
             document.getElementById("product-form").reset();
             document.getElementById("customer-form").reset();
+            const settleForm = document.getElementById("settlement-form");
+            if (settleForm) settleForm.reset();
             
             // Set date field to today's date
             const dateInput = document.getElementById('inv-date-input');
@@ -1600,7 +1945,7 @@
             const formMap = {
                 'form-inv': 'invoice-form',
                 'form-prod': 'product-form',
-                'form-cust': 'customer-form'
+                'form-cust': 'customer-form-container'
             };
             const actualFormId = formMap[formId] || formId;
             const targetForm = document.getElementById(actualFormId);
@@ -1615,6 +1960,14 @@
             const activeBtn = document.getElementById(btnMap[formId]);
             if (activeBtn) {
                 activeBtn.className = "bg-white text-black py-2.5 rounded-xl shadow-xs transition-all";
+            }
+
+            if (formId === 'form-cust') {
+                if (!editingCustomerId) {
+                    initializeSettlementForm();
+                } else {
+                    toggleSettlementSubTab('profile');
+                }
             }
         }
 
@@ -1782,6 +2135,14 @@
             
             if (customerBox && e.target !== customerInput && !isClickingCustomerDropdown && !customerBox.contains(e.target)) {
                 customerBox.classList.add("hidden");
+            }
+
+            const settleCustomerInput = document.getElementById("settle-customer-input");
+            const settleCustomerBox = document.getElementById("settle-customer-suggestions-box");
+            const isClickingSettleCustomerDropdown = e.target.closest('.settle-customer-dropdown-btn') || e.target.classList.contains('settle-customer-dropdown-btn');
+            
+            if (settleCustomerBox && e.target !== settleCustomerInput && !isClickingSettleCustomerDropdown && !settleCustomerBox.contains(e.target)) {
+                settleCustomerBox.classList.add("hidden");
             }
             
             document.querySelectorAll("[id^='product-suggestions-']").forEach(box => {
@@ -2067,6 +2428,9 @@
                 renderInvoicesListStream();
                 renderCustomersListStream();
                 updateSidebarBadges();
+            }, (error) => {
+                console.error("Firestore Invoices snapshot listener failed:", error);
+                showToast("Database load failed (invoices): " + error.message, "error");
             });
 
             let isInitialProducts = true;
@@ -2093,6 +2457,9 @@
 
                 renderProductsListStream();
                 updateSidebarBadges();
+            }, (error) => {
+                console.error("Firestore Products snapshot listener failed:", error);
+                showToast("Database load failed (products): " + error.message, "error");
             });
 
             let isInitialCustomers = true;
@@ -2118,6 +2485,9 @@
                 }
 
                 renderCustomersListStream();
+            }, (error) => {
+                console.error("Firestore Customers snapshot listener failed:", error);
+                showToast("Database load failed (customers): " + error.message, "error");
             });
         }
 
@@ -2256,6 +2626,9 @@
                     status: "earned",
                     advancePaid: grossVal
                 }, 'mark_paid');
+            } catch (err) {
+                console.error("Error marking invoice paid:", err);
+                showToast("Failed to mark paid: " + err.message, "error");
             }
         }
 
@@ -2501,11 +2874,24 @@
             debtEl.innerText = "₹" + customerDebt.toLocaleString('en-IN');
             
             const settleBtn = document.getElementById("cust-detail-settle-btn");
+            const recordSettleBtn = document.getElementById("cust-detail-record-settle-btn");
+            
+            if (recordSettleBtn) {
+                recordSettleBtn.onclick = () => {
+                    closeModal("customer-detail-modal");
+                    openModal("data-modal");
+                    toggleSubform("form-cust");
+                    initializeSettlementForm(customer.name);
+                };
+            }
+
             if (customerDebt > 0) {
                 settleBtn.classList.remove("hidden");
                 settleBtn.onclick = () => settleAllCustomerDebt(customer.name);
+                if (recordSettleBtn) recordSettleBtn.classList.remove("col-span-2");
             } else {
                 settleBtn.classList.add("hidden");
+                if (recordSettleBtn) recordSettleBtn.classList.add("col-span-2");
             }
             
             document.getElementById("cust-detail-edit-btn").onclick = () => {
@@ -2924,6 +3310,350 @@
                 closeModal('data-modal');
             } catch(e) { showToast(e.message, "error"); }
         });
+
+        // ==========================================
+        // CLIENT SETTLEMENTS & EMPTY BOX RETURNS LOGIC
+        // ==========================================
+        function toggleSettlementSubTab(tab) {
+            document.querySelectorAll('.settlement-sub-box').forEach(el => el.classList.add('hidden'));
+            
+            const btnSettle = document.getElementById('btn-settle-tab');
+            const btnProfile = document.getElementById('btn-profile-tab');
+            
+            if (tab === 'settle') {
+                document.getElementById('settlement-form').classList.remove('hidden');
+                btnSettle.className = "bg-white text-black py-2 rounded-lg shadow-2xs transition-all";
+                btnProfile.className = "text-neutral-500 hover:text-neutral-800 py-2 rounded-lg transition-all";
+            } else {
+                document.getElementById('customer-form').classList.remove('hidden');
+                btnProfile.className = "bg-white text-black py-2 rounded-lg shadow-2xs transition-all";
+                btnSettle.className = "text-neutral-500 hover:text-neutral-800 py-2 rounded-lg transition-all";
+            }
+        }
+
+        function initializeSettlementForm(customerName = '') {
+            const form = document.getElementById('settlement-form');
+            if (form) form.reset();
+            
+            const custInput = document.getElementById('settle-customer-input');
+            if (custInput) {
+                custInput.value = customerName;
+            }
+            
+            const dateInput = document.getElementById('settle-date');
+            if (dateInput) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+            
+            toggleSettlementSubTab('settle');
+            
+            // Show customer balance card if a customer name was pre-filled
+            updateSettleCustomerInfo();
+        }
+
+        function handleSettleCustomerAutocomplete(inputEl) {
+            const val = inputEl.value.trim().toLowerCase();
+            const suggestionsBox = document.getElementById("settle-customer-suggestions-box");
+            if (!suggestionsBox) return;
+
+            if (!val) {
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            const matches = cachedCustomersArray.filter(c => c.name.toLowerCase().includes(val));
+
+            if (matches.length === 0) {
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            suggestionsBox.innerHTML = matches.map(c => `
+                <div onclick="selectSettleCustomerSuggestion('${c.name.replace(/'/g, "\\'")}')" class="px-4 py-2.5 hover:bg-indigo-50 text-neutral-800 text-xs font-bold cursor-pointer transition-all border-b border-neutral-100 last:border-b-0 text-left">
+                    ${c.name} <span class="text-[9px] font-normal text-neutral-400">(${c.city})</span>
+                </div>
+            `).join("");
+
+            suggestionsBox.classList.remove("hidden");
+        }
+
+        function toggleSettleCustomerDropdown() {
+            const suggestionsBox = document.getElementById("settle-customer-suggestions-box");
+            if (!suggestionsBox) return;
+            
+            if (!suggestionsBox.classList.contains("hidden")) {
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            const matches = cachedCustomersArray;
+            if (matches.length === 0) return;
+
+            suggestionsBox.innerHTML = matches.map(c => `
+                <div onclick="selectSettleCustomerSuggestion('${c.name.replace(/'/g, "\\'")}')" class="px-4 py-2.5 hover:bg-indigo-50 text-neutral-800 text-xs font-bold cursor-pointer transition-all border-b border-neutral-100 last:border-b-0 text-left">
+                    ${c.name} <span class="text-[9px] font-normal text-neutral-400">(${c.city})</span>
+                </div>
+            `).join("");
+
+            suggestionsBox.classList.remove("hidden");
+        }
+
+        function selectSettleCustomerSuggestion(name) {
+            const inputEl = document.getElementById("settle-customer-input");
+            if (inputEl) {
+                inputEl.value = name;
+            }
+            const suggestionsBox = document.getElementById("settle-customer-suggestions-box");
+            if (suggestionsBox) {
+                suggestionsBox.classList.add("hidden");
+            }
+            updateSettleCustomerInfo();
+        }
+
+        function updateSettleCustomerInfo() {
+            const customerName = (document.getElementById("settle-customer-input").value || "").trim();
+            const infoCard = document.getElementById("settle-customer-info-card");
+            if (!infoCard) return;
+
+            if (!customerName) {
+                infoCard.classList.add("hidden");
+                return;
+            }
+
+            // Find customer invoices
+            const customerInvoices = localizedInvoices.filter(i => 
+                i.customer.toLowerCase() === customerName.toLowerCase()
+            );
+
+            if (customerInvoices.length === 0) {
+                infoCard.classList.add("hidden");
+                return;
+            }
+
+            // Calculate totals
+            let totalAmount = 0;
+            let totalPaid = 0;
+            let totalOutstanding = 0;
+            let totalBoxesDelivered = 0;
+            let totalBoxesReturned = 0;
+
+            customerInvoices.forEach(inv => {
+                const amt = parseFloat(inv.amount || 0);
+                const disc = parseFloat(inv.discount || 0);
+                const paid = parseFloat(inv.advancePaid || 0);
+                totalAmount += amt;
+                totalPaid += paid + disc;
+                const outstanding = Math.max(0, amt - disc - paid);
+                if (inv.status === 'pending') totalOutstanding += outstanding;
+
+                const boxDel = parseInt(inv.boxes || 0);
+                const boxRet = parseInt(inv.returnedBoxes || 0);
+                totalBoxesDelivered += boxDel;
+                totalBoxesReturned += boxRet;
+            });
+
+            const pendingBoxes = Math.max(0, totalBoxesDelivered - totalBoxesReturned);
+
+            // Update UI
+            document.getElementById("settle-info-name").textContent = customerName;
+            document.getElementById("settle-info-total-invoices").textContent = customerInvoices.length;
+            document.getElementById("settle-info-total-amount").textContent = "₹" + totalAmount.toLocaleString('en-IN');
+            document.getElementById("settle-info-total-paid").textContent = "₹" + totalPaid.toLocaleString('en-IN');
+            document.getElementById("settle-info-outstanding").textContent = "₹" + totalOutstanding.toLocaleString('en-IN');
+            document.getElementById("settle-info-pending-boxes").textContent = pendingBoxes;
+
+            infoCard.classList.remove("hidden");
+        }
+
+        async function submitSettlementForm(e) {
+            e.preventDefault();
+            const customerName = document.getElementById("settle-customer-input").value.trim();
+            const rawAmount = parseFloat(document.getElementById("settle-amount").value || 0);
+            const rawBoxes = parseInt(document.getElementById("settle-boxes").value || 0);
+            const settleDateStr = document.getElementById("settle-date").value;
+            const settleNoteStr = document.getElementById("settle-note").value.trim();
+
+            if (!customerName) {
+                showToast("Please select a customer!", "warning");
+                return;
+            }
+
+            if (rawAmount < 0 || rawBoxes < 0) {
+                showToast("Values cannot be negative!", "warning");
+                return;
+            }
+
+            if (rawAmount === 0 && rawBoxes === 0) {
+                showToast("Please enter an amount or boxes returned!", "warning");
+                return;
+            }
+
+            try {
+                // Fetch customer invoices from cache/local array to distribute
+                const pendingInvoices = localizedInvoices.filter(i => 
+                    i.customer.toLowerCase() === customerName.toLowerCase() && 
+                    i.status === "pending"
+                );
+
+                // Sort by createdAt ascending (oldest first)
+                pendingInvoices.sort((a, b) => {
+                    const tA = a.createdAt ? (a.createdAt.seconds || new Date(a.createdAt).getTime() / 1000) : 0;
+                    const tB = b.createdAt ? (b.createdAt.seconds || new Date(b.createdAt).getTime() / 1000) : 0;
+                    return tA - tB;
+                });
+
+                let remainingPayment = rawAmount;
+                let remainingBoxes = rawBoxes;
+
+                const batch = db.batch();
+                const updatedInvoicesList = [];
+
+                let defaultNote = settleNoteStr;
+                if (!defaultNote) {
+                    if (rawAmount > 0 && rawBoxes > 0) {
+                        defaultNote = "Settlement (Cash & Boxes)";
+                    } else if (rawAmount > 0) {
+                        defaultNote = "Settlement (Cash)";
+                    } else {
+                        defaultNote = "Settlement (Boxes)";
+                    }
+                }
+
+                for (const inv of pendingInvoices) {
+                    if (remainingPayment <= 0 && remainingBoxes <= 0) break;
+
+                    const total = parseFloat(inv.amount || 0);
+                    const disc = parseFloat(inv.discount || 0);
+                    const paid = parseFloat(inv.advancePaid || 0);
+                    const outstanding = Math.max(0, total - disc - paid);
+
+                    const boxesDelivered = parseInt(inv.boxes || 0);
+                    const boxesReturned = parseInt(inv.returnedBoxes || 0);
+                    const pendingBoxes = Math.max(0, boxesDelivered - boxesReturned);
+
+                    let payToAllocate = 0;
+                    let boxesToAllocate = 0;
+
+                    if (remainingPayment > 0 && outstanding > 0) {
+                        payToAllocate = Math.min(remainingPayment, outstanding);
+                        remainingPayment -= payToAllocate;
+                    }
+
+                    if (remainingBoxes > 0 && pendingBoxes > 0) {
+                        boxesToAllocate = Math.min(remainingBoxes, pendingBoxes);
+                        remainingBoxes -= boxesToAllocate;
+                    }
+
+                    if (payToAllocate > 0 || boxesToAllocate > 0) {
+                        const newPaid = paid + payToAllocate;
+                        const newReturned = boxesReturned + boxesToAllocate;
+                        const newOutstanding = total - disc - newPaid;
+                        const newStatus = newOutstanding <= 0 ? 'earned' : 'pending';
+
+                        const paymentsHistory = inv.payments ? [...inv.payments] : [];
+                        paymentsHistory.push({
+                            amount: payToAllocate,
+                            boxesReturned: boxesToAllocate,
+                            date: firebase.firestore.Timestamp.fromDate(new Date(settleDateStr)),
+                            note: defaultNote
+                        });
+
+                        const docRef = db.collection("invoices").doc(inv.id);
+                        const updateData = {
+                            advancePaid: newPaid,
+                            returnedBoxes: newReturned,
+                            status: newStatus,
+                            payments: paymentsHistory
+                        };
+                        batch.update(docRef, updateData);
+
+                        updatedInvoicesList.push({ ...inv, ...updateData });
+                    }
+                }
+
+                // If overpayment or extra empty boxes remaining, apply to the latest overall customer invoice
+                if (remainingPayment > 0 || remainingBoxes > 0) {
+                    const allInvoices = localizedInvoices.filter(i => 
+                        i.customer.toLowerCase() === customerName.toLowerCase()
+                    );
+
+                    if (allInvoices.length > 0) {
+                        allInvoices.sort((a, b) => {
+                            const tA = a.createdAt ? (a.createdAt.seconds || new Date(a.createdAt).getTime() / 1000) : 0;
+                            const tB = b.createdAt ? (b.createdAt.seconds || new Date(b.createdAt).getTime() / 1000) : 0;
+                            return tB - tA; // newest first
+                        });
+
+                        const latestInv = allInvoices[0];
+                        const alreadyUpdatedIdx = updatedInvoicesList.findIndex(i => i.id === latestInv.id);
+                        const targetInv = alreadyUpdatedIdx > -1 ? updatedInvoicesList[alreadyUpdatedIdx] : latestInv;
+
+                        const paid = parseFloat(targetInv.advancePaid || 0);
+                        const boxesReturned = parseInt(targetInv.returnedBoxes || 0);
+
+                        const newPaid = paid + remainingPayment;
+                        const newReturned = boxesReturned + remainingBoxes;
+                        
+                        const total = parseFloat(targetInv.amount || 0);
+                        const disc = parseFloat(targetInv.discount || 0);
+                        const newOutstanding = total - disc - newPaid;
+                        const newStatus = newOutstanding <= 0 ? 'earned' : 'pending';
+
+                        const paymentsHistory = targetInv.payments ? [...targetInv.payments] : [];
+                        paymentsHistory.push({
+                            amount: remainingPayment,
+                            boxesReturned: remainingBoxes,
+                            date: firebase.firestore.Timestamp.fromDate(new Date(settleDateStr)),
+                            note: defaultNote + " (Excess Credit)"
+                        });
+
+                        const docRef = db.collection("invoices").doc(targetInv.id);
+                        const updateData = {
+                            advancePaid: newPaid,
+                            returnedBoxes: newReturned,
+                            status: newStatus,
+                            payments: paymentsHistory
+                        };
+
+                        batch.update(docRef, updateData);
+                        
+                        if (alreadyUpdatedIdx > -1) {
+                            updatedInvoicesList[alreadyUpdatedIdx] = { ...targetInv, ...updateData };
+                        } else {
+                            updatedInvoicesList.push({ ...targetInv, ...updateData });
+                        }
+
+                        showToast(`Recorded excess: ₹${remainingPayment} & ${remainingBoxes} boxes credited to ${targetInv.serialNo || 'latest invoice'}`, "info");
+                    } else {
+                        showToast(`No invoices found for ${customerName} to record excess credit!`, "error");
+                    }
+                }
+
+                await batch.commit();
+
+                // Trigger sync for all modified invoices
+                for (const updatedInv of updatedInvoicesList) {
+                    syncInvoiceToGoogleSheet(updatedInv, 'partial_payment');
+                }
+
+                showToast(`Settlement recorded successfully for ${customerName}!`, "success");
+                
+                document.getElementById("settlement-form").reset();
+                closeModal("data-modal");
+
+            } catch (err) {
+                console.error("Settlement error:", err);
+                showToast("Settlement failed: " + err.message, "error");
+            }
+        }
+
+        document.getElementById("settlement-form").addEventListener("submit", submitSettlementForm);
 
         // SEARCH QUERY CONTROLLER
         function executeSearch() {
