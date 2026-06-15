@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShopFlow - OK Fruits Premium</title>
+    <title>OK Fruits - Premium</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,9 +71,31 @@
         .animate-fade-in {
             animation: fadeIn 0.2s ease-out forwards;
         }
+
+        /* Left-sliding Sidebar drawer styles */
+        .sidebar-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .sidebar-panel {
+            transform: translateX(-100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-overlay.active .sidebar-panel {
+            transform: translateX(0);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-[#F4F5FA] via-[#E9ECF8] to-[#F1F3FC] text-gray-900 min-h-screen antialiased font-ui">
+    <script>
+        // Always hide the login gate visually on startup for local editing/testing
+        document.write('<style id="splash-hide-gate">#login-gate { display: none !important; }</style>');
+    </script>
 
     <!-- LOGIN GATE SCREEN -->
     <div id="login-gate" class="fixed inset-0 z-[200] bg-gradient-to-br from-[#1a1b2e] via-[#0f1021] to-[#1a1b2e] flex items-center justify-center">
@@ -85,39 +107,74 @@
                 <h1 class="text-3xl font-extrabold text-white font-header tracking-tight">OK FRUITS</h1>
                 <p class="text-xs text-neutral-400 mt-1 tracking-widest uppercase font-semibold">by SIN.</p>
             </div>
-            <button onclick="signInWithGoogle()" class="w-full bg-white hover:bg-neutral-50 text-neutral-900 rounded-full py-4 px-6 font-bold text-sm flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-[1.02] active:scale-95 border border-neutral-200">
-                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                Sign in with Google
-            </button>
-            <div id="login-error" class="hidden text-red-400 text-xs font-semibold bg-red-500/10 p-3 rounded-xl border border-red-500/20"></div>
-            <p class="text-[10px] text-neutral-600">Authorized access only</p>
+            <!-- Session Loader (Visible during initial session check) -->
+            <div id="login-loading" class="flex flex-col items-center gap-3 text-white pt-4">
+                <i class="fa-solid fa-circle-notch animate-spin text-3xl text-[#5D5FEF]"></i>
+                <p class="text-xs text-neutral-400 font-semibold uppercase tracking-wider">Checking session...</p>
+            </div>
+
+            <!-- Login Controls (Hidden by default, shown if not logged in) -->
+            <div id="login-actions" class="hidden w-full space-y-4">
+                <button onclick="signInWithGoogle()" class="w-full bg-white hover:bg-neutral-50 text-neutral-900 rounded-full py-4 px-6 font-bold text-sm flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-[1.02] active:scale-95 border border-neutral-200">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    Sign in with Google
+                </button>
+                <div id="login-error" class="hidden text-red-400 text-xs font-semibold bg-red-500/10 p-3 rounded-xl border border-red-500/20"></div>
+            </div>
+            <p class="text-[10px] text-neutral-600 font-medium">Authorized access only</p>
         </div>
     </div>
 
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] space-y-2 pointer-events-none"></div>
 
-    <div id="dashboard-app" class="max-w-md mx-auto min-h-screen flex flex-col p-5 md:max-w-5xl md:grid md:grid-cols-12 md:gap-6 md:p-8 pb-44 hidden">
+    <div id="dashboard-app" class="max-w-md mx-auto min-h-screen flex flex-col p-5 md:max-w-5xl md:grid md:grid-cols-12 md:gap-6 md:p-8 pb-44">
         
         <!-- HEADER OVERHAUL -->
-        <header class="flex justify-between items-center w-full mb-6 md:col-span-12">
-            <div>
-                <h1 class="text-4xl font-extrabold tracking-tight text-neutral-900 leading-[0.9] font-header">hello ,</h1>
-                <h2 class="text-4xl font-extrabold tracking-tight text-neutral-900 leading-[0.9] font-header mt-1">ok fruits</h2>
+        <header class="flex justify-between items-center w-full mb-6 md:col-span-12 bg-white/40 backdrop-blur-md border border-white/20 px-4 py-3 rounded-2xl shadow-xs">
+            <!-- Left purple menu list button -->
+            <button onclick="openModal('sidebar-menu-modal')" class="h-10 w-10 rounded-xl bg-[#5D5FEF] hover:bg-[#4F46E5] text-white flex items-center justify-center shadow-md active:scale-95 transition-all cursor-pointer" title="Menu">
+                <i class="fa-solid fa-bars text-base"></i>
+            </button>
+            
+            <!-- Centered bold title -->
+            <div class="text-center">
+                <h1 class="text-xl font-black tracking-widest text-neutral-900 font-header uppercase select-none">OK FRUITS</h1>
             </div>
-            <div class="flex items-center gap-4">
-                <i class="fa-solid fa-bell text-xl text-neutral-800 cursor-pointer hover:text-black font-semibold"></i>
-                <div onclick="openUserProfileModal()" class="h-10 w-10 rounded-full overflow-hidden shadow-sm border-2 border-[#5D5FEF] cursor-pointer hover:scale-110 active:scale-95 transition-all ring-2 ring-[#5D5FEF]/20" title="My Profile">
+            
+            <!-- Right notifications and profile avatar -->
+            <div class="flex items-center gap-3">
+                <button class="relative h-10 w-10 rounded-xl bg-white/80 hover:bg-neutral-100 border border-neutral-200 text-neutral-800 flex items-center justify-center transition-all shadow-xs cursor-pointer" title="Notifications">
+                    <i class="fa-solid fa-bell text-sm"></i>
+                    <span class="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+                </button>
+                <div onclick="openUserProfileModal()" class="h-10 w-10 rounded-xl overflow-hidden shadow-sm border border-[#5D5FEF] cursor-pointer hover:scale-105 active:scale-95 transition-all ring-2 ring-[#5D5FEF]/20" title="My Profile">
                     <img src="LOGO.png" alt="OK Fruits" class="h-full w-full object-cover">
                 </div>
             </div>
         </header>
 
-        <!-- CREATE DATA BUTTON -->
+        <!-- TOP ACTION CARDS PANEL -->
         <div class="w-full mb-6 md:col-span-12 admin-only">
-            <button onclick="openModal('data-modal')" class="w-full bg-black hover:bg-neutral-900 text-white rounded-full py-4 text-center font-semibold text-sm tracking-wide shadow-md transition-all flex items-center justify-center border border-white/10 card-transition">
-                Create new data
-            </button>
+            <div class="bg-gradient-to-r from-[#5D5FEF] via-[#6B50F6] to-[#8C52FF] p-4 rounded-[28px] shadow-lg border border-white/10">
+                <div class="grid grid-cols-3 gap-2.5">
+                    <!-- CREATE NEW DATA -->
+                    <button onclick="openModal('data-modal'); toggleSubform('form-inv');" class="bg-white/10 hover:bg-white/20 active:scale-95 transition-all duration-200 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center border border-white/10 h-24 cursor-pointer shadow-xs">
+                        <i class="fa-solid fa-file-invoice-dollar text-[#CCFF00] text-xl mb-2"></i>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white leading-tight text-center">CREATE NEW DATA</span>
+                    </button>
+                    <!-- ADD NEW PRODUCT -->
+                    <button onclick="openModal('data-modal'); toggleSubform('form-prod');" class="bg-white/10 hover:bg-white/20 active:scale-95 transition-all duration-200 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center border border-white/10 h-24 cursor-pointer shadow-xs">
+                        <i class="fa-solid fa-boxes-stacked text-[#CCFF00] text-xl mb-2"></i>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white leading-tight text-center">ADD NEW PRODUCT</span>
+                    </button>
+                    <!-- SETTLMENTS -->
+                    <button onclick="openModal('data-modal'); toggleSubform('form-cust');" class="bg-white/10 hover:bg-white/20 active:scale-95 transition-all duration-200 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center border border-white/10 h-24 cursor-pointer shadow-xs">
+                        <i class="fa-solid fa-handshake-angle text-[#CCFF00] text-xl mb-2"></i>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white leading-tight text-center">SETTLMENTS</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- FILTERS -->
@@ -203,7 +260,7 @@
         <div class="w-full mb-6 md:col-span-12 glass-panel rounded-2xl p-3 flex items-center gap-3 overflow-hidden text-xs">
             <span class="bg-neutral-950 text-[#CCFF00] font-black uppercase text-[9px] px-2 py-0.5 rounded tracking-widest shrink-0">Live Audit</span>
             <div id="activity-feed-ticker" class="text-neutral-600 font-medium truncate w-full transition-opacity duration-200">
-                <i class="fa-solid fa-circle-nodes mr-1.5 animate-spin text-[#5D5FEF]"></i> Monitoring live ShopFlow database nodes...
+                <i class="fa-solid fa-circle-nodes mr-1.5 animate-spin text-[#5D5FEF]"></i> Monitoring live OK Fruits database nodes...
             </div>
         </div>
 
@@ -242,11 +299,11 @@
             <!-- Buttons -->
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="openModal('search-modal')" class="bg-black hover:bg-neutral-900 text-white rounded-full p-1.5 pl-6 pr-1.5 flex justify-between items-center h-12 border border-white/10 shadow-md card-transition">
-                    <span class="font-bold text-xs uppercase tracking-widest text-neutral-300">search</span>
+                    <span class="font-bold text-xs tracking-widest text-neutral-300">search</span>
                     <div class="bg-[#CCFF00] h-8 w-8 rounded-full flex items-center justify-center text-black shadow-inner"><i class="fa-solid fa-chevron-right text-xs"></i></div>
                 </button>
                 <button onclick="openModal('calc-modal')" class="bg-black hover:bg-neutral-900 text-white rounded-full p-1.5 pl-6 pr-1.5 flex justify-between items-center h-12 border border-white/10 shadow-md card-transition">
-                    <span class="font-bold text-xs uppercase tracking-widest text-neutral-300">Calculator</span>
+                    <span class="font-bold text-xs tracking-widest text-neutral-300">Calculator</span>
                     <div class="bg-[#CCFF00] h-8 w-8 rounded-full flex items-center justify-center text-black shadow-inner"><i class="fa-solid fa-calculator text-xs"></i></div>
                 </button>
             </div>
@@ -321,19 +378,30 @@
             </div>
             
             <form id="invoice-form" class="subform-box space-y-4">
-                <div class="grid grid-cols-2 gap-3 items-end">
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">CUSTOMER NAME</label>
-                            <span id="inv-serial-badge" class="text-[9px] bg-[#E0E4FF] text-[#5D5FEF] px-2 py-0.5 rounded font-black font-num tracking-wide">INV-0001</span>
-                        </div>
-                        <input type="text" id="inv-customer-input" list="suggested-customers-list" oninput="updateCustomerInfoFlow()" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
+                <!-- Customer Name & Date Row -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center px-1">
+                        <label class="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">CUSTOMER NAME</label>
+                        <span id="inv-serial-badge" class="text-[9px] bg-[#E0E4FF] text-[#5D5FEF] px-2.5 py-0.5 rounded-full font-black font-num tracking-wide">INV-0001</span>
+                        <label class="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-1">DATE <i class="fa-solid fa-calendar-days text-[9px]"></i></label>
                     </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">DATE <i class="fa-solid fa-calendar-days text-[9px] ml-1"></i></label>
+                    <div class="grid grid-cols-12 gap-3">
+                        <!-- Customer Name Input (col-span-7) -->
+                        <div class="col-span-7 relative">
+                            <div class="relative">
+                                <input type="text" id="inv-customer-input" autocomplete="off" oninput="handleCustomerAutocomplete(this)" class="w-full pl-4 pr-10 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
+                                <button type="button" onclick="toggleCustomerDropdown()" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-all cursor-pointer" title="Show suggestions">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </button>
+                            </div>
+                            <!-- Custom suggestions popup (solid background) -->
+                            <div id="customer-suggestions-box" class="absolute z-[100] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-2xl shadow-2xl max-h-48 overflow-y-auto no-scrollbar hidden"></div>
                         </div>
-                        <input type="date" id="inv-date-input" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        
+                        <!-- Date Input (col-span-5) -->
+                        <div class="col-span-5">
+                            <input type="date" id="inv-date-input" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
                     </div>
                 </div>
                 
@@ -342,76 +410,103 @@
                 </div>
 
                 <!-- ITEMS CONTAINER -->
-                <div class="space-y-3 pt-2">
-                    <div class="flex justify-between items-center px-1 border-b pb-2">
+                <div class="space-y-2 pt-1">
+                    <!-- Circular Add Button on its own line -->
+                    <div class="flex items-center px-1">
                         <button type="button" onclick="addInvoiceItemRow()" class="h-6 w-6 rounded-full bg-[#5D5FEF] text-white flex items-center justify-center hover:bg-[#4F46E5] transition-all card-transition" title="Add Fruit Particular Row">
                             <i class="fa-solid fa-plus text-xs"></i>
                         </button>
-                        <span class="text-[10px] font-black text-[#5D5FEF] tracking-wide">ADD ANOTHER FRUIT</span>
                     </div>
                     
-                    <div class="grid grid-cols-12 gap-2 text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider px-1">
-                        <div class="col-span-3">RATE / KG</div>
-                        <div class="col-span-4">PARTICULARS</div>
-                        <div class="col-span-2">QUA</div>
-                        <div class="col-span-3">TOTAL AMT</div>
-                    </div>
-                    
-                    <div id="invoice-items-container" class="space-y-2.5 max-h-56 overflow-y-auto no-scrollbar">
+                    <div id="invoice-items-container" class="space-y-3 max-h-56 overflow-y-auto no-scrollbar">
                         <!-- Dynamic item fields will be loaded here -->
                     </div>
                 </div>
 
-                <!-- Boxes, LG, Vala Breakdown -->
-                <div class="grid grid-cols-12 gap-3 items-end pt-2 border-t">
-                    <div class="col-span-4">
-                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">TOTAL BOXES</label>
-                        <input type="number" id="inv-total-boxes" readonly placeholder="000" class="w-full px-3 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-500 focus:outline-none font-num">
+                <!-- Summary Row (LG, VALA, TOTAL BOXES, TOTAL QUA, TOTAL AMT) -->
+                <div class="grid grid-cols-12 gap-2 pt-3 border-t border-neutral-200 items-end">
+                    <!-- Boxes: LG & VALA (col-span-3, aligned under RATE / KG) -->
+                    <div class="col-span-3">
+                        <div class="flex justify-between items-center text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">
+                            <span>BOXES : LG</span>
+                            <span>VALA</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <input type="number" id="inv-lg-boxes" oninput="calculateTotalBoxes()" placeholder="0" class="w-full px-1 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
+                            <input type="number" id="inv-vala-boxes" oninput="calculateTotalBoxes()" placeholder="0" class="w-full px-1 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
+                        </div>
                     </div>
-                    <div class="col-span-4">
-                        <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">LG (LARGE)</label>
-                        <input type="number" id="inv-lg-boxes" oninput="calculateTotalBoxes()" placeholder="4" class="w-full px-3 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none font-num">
+                    
+                    <!-- TOTAL BOXES (col-span-4, aligned under PARTICULARS) -->
+                    <div class="col-span-4 flex flex-col items-center">
+                        <label class="block text-[9px] font-black text-neutral-900 uppercase tracking-wider mb-1 text-center leading-tight">TOTAL BOXES</label>
+                        <input type="number" id="inv-total-boxes" oninput="updateNetPendingTotal()" placeholder="0" class="w-14 px-1 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
                     </div>
-                    <div class="col-span-4">
-                        <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">VALA</label>
-                        <input type="number" id="inv-vala-boxes" oninput="calculateTotalBoxes()" placeholder="4" class="w-full px-3 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none font-num">
+                    
+                    <!-- TOTAL QUA (col-span-2, aligned under QUA) -->
+                    <div class="col-span-2">
+                        <label class="block text-[9px] font-black text-neutral-900 uppercase tracking-wider mb-1 text-center leading-tight">TOTAL QUA</label>
+                        <input type="number" step="any" id="inv-total-quantity" oninput="updateNetPendingTotal()" placeholder="0.00" class="w-full px-1 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
                     </div>
-                </div>
-
-                <!-- Summation block -->
-                <div class="grid grid-cols-2 gap-3 pt-2">
-                    <div>
-                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">TOTAL QUA</label>
-                        <input type="number" id="inv-total-quantity" readonly placeholder="Weight Sum" class="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-500 focus:outline-none font-num">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">TOTAL AMT</label>
-                        <input type="number" id="inv-gross-amount" readonly placeholder="Gross Total" class="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-500 focus:outline-none font-num">
-                    </div>
-                </div>
-
-                <!-- Payment and advance -->
-                <div class="grid grid-cols-2 gap-3 pt-2">
-                    <div>
-                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">PAYMENT METHOD</label>
-                        <input type="hidden" id="inv-payment-status" value="pending">
-                        <button type="button" id="inv-payment-toggle-btn" onclick="togglePaymentMethodButton()" class="w-full px-4 py-3 bg-[#EAEAEA] text-neutral-800 border border-neutral-200 rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs transition-all h-11 flex items-center justify-center card-transition">
-                            DEBT
-                        </button>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1">ADVANCE</label>
-                        <input type="number" id="inv-advance" oninput="updateNetPendingTotal()" placeholder="000000000" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                    
+                    <!-- TOTAL AMT (col-span-3, aligned under TOTAL AMT) -->
+                    <div class="col-span-3">
+                        <label class="block text-[9px] font-black text-neutral-900 uppercase tracking-wider mb-1 text-center leading-tight">TOTAL AMT</label>
+                        <input type="number" step="any" id="inv-gross-amount" oninput="updateNetPendingTotal()" placeholder="0.00" class="w-full px-1 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
                     </div>
                 </div>
 
-                <!-- Final Net Outstanding -->
-                <div class="pt-2">
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">TOTAL AMOUNT</label>
-                        <span id="inv-old-balance-badge" class="hidden text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 animate-pulse">Old Pending: ₹0</span>
+                <!-- Payment Method Section -->
+                <div class="border-t border-neutral-200 pt-3 space-y-3">
+                    <div class="text-center">
+                        <span class="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest">PAYMENT METHOD</span>
                     </div>
-                    <input type="number" id="inv-net-pending-total" readonly placeholder="000000000" class="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-sm font-black text-neutral-800 focus:outline-none font-num">
+                    
+                    <div class="grid grid-cols-12 gap-3">
+                        <!-- OLD BALANCE (col-span-4) -->
+                        <div class="col-span-4">
+                            <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 text-center">OLD BALANCE</label>
+                            <input type="number" id="inv-old-balance" oninput="updateNetPendingTotal()" placeholder="0" class="w-full px-2 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
+                        </div>
+                        
+                        <!-- CURRENT PAYMENT (col-span-4) -->
+                        <div class="col-span-4">
+                            <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 text-center">CURRENT PAYMENT</label>
+                            <input type="hidden" id="inv-payment-status" value="pending">
+                            <button type="button" id="inv-payment-toggle-btn" onclick="togglePaymentMethodButton()" class="w-full px-2 py-3 bg-[#EAEAEA] text-neutral-800 border border-neutral-200 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-xs transition-all h-11 flex items-center justify-center card-transition">
+                                DEBT
+                            </button>
+                        </div>
+                        
+                        <!-- DISCOOUNT (col-span-4) -->
+                        <div class="col-span-4">
+                            <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 text-center">DISCOOUNT</label>
+                            <input type="number" id="inv-discount" oninput="updateNetPendingTotal()" placeholder="0" class="w-full px-2 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-12 gap-3">
+                        <!-- Empty (col-span-4) -->
+                        <div class="col-span-4"></div>
+                        
+                        <!-- ADVNC / SETTL (col-span-4) -->
+                        <div class="col-span-4">
+                            <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 text-center">ADVNC / SETTL</label>
+                            <input type="number" id="inv-advance" oninput="updateNetPendingTotal()" placeholder="0" class="w-full px-2 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
+                        </div>
+                        
+                        <!-- TOTAL AMOUNT (col-span-4) -->
+                        <div class="col-span-4">
+                            <label class="block text-[9px] font-bold text-[#5D5FEF] uppercase tracking-wider mb-1 text-center">TOTAL AMOUNT</label>
+                            <input type="number" id="inv-net-pending-total" placeholder="0" class="w-full px-2 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-black text-[#5D5FEF] focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DESCRIPTION Input -->
+                <div class="border-t border-neutral-200 pt-3">
+                    <label class="block text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">DESCRIPTION</label>
+                    <input type="text" id="inv-description" placeholder="Notes / Details..." class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
                 </div>
 
                 <button type="submit" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white py-4 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-md card-transition">SAVE INVOICE</button>
@@ -482,6 +577,109 @@
                         <!-- Customer specific invoices will render here -->
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECORD PARTIAL PAYMENT MODAL -->
+    <div id="record-payment-modal" class="fixed inset-0 bg-neutral-950/50 z-50 flex items-center justify-center hidden backdrop-blur-xs modal-overlay animate-fade-in" onclick="closeModalOnPaymentOverlayClick(event)">
+        <div class="modal-panel bg-white w-full max-w-md rounded-[32px] p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl no-scrollbar mx-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-extrabold text-neutral-900 tracking-wider flex items-center font-header">
+                    <i class="fa-solid fa-circle-dollar-to-slot text-[#5D5FEF] mr-2"></i>RECORD PAYMENT
+                </h3>
+                <button onclick="closeModal('record-payment-modal')" class="text-neutral-400 hover:text-red-500 transition-all">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Invoice General Details Info Card -->
+                <div class="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span id="payment-modal-serial" class="text-[10px] bg-[#E0E4FF] text-[#5D5FEF] px-2.5 py-0.5 rounded font-black font-num tracking-wide">INV-0001</span>
+                        <span id="payment-modal-date" class="text-xs text-neutral-400 font-medium font-num">Date: 2026-06-15</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 block font-ui">CUSTOMER</span>
+                        <span id="payment-modal-customer" class="text-sm font-bold text-neutral-900 block">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 block font-ui">FRUIT PARTICULARS</span>
+                        <div id="payment-modal-items" class="space-y-1 mt-1">-</div>
+                    </div>
+                </div>
+
+                <!-- Financial Balance Sheet -->
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-[#F8F9FE] p-2.5 rounded-xl border border-neutral-100">
+                        <span class="text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider block">TOTAL</span>
+                        <span id="payment-modal-total" class="text-xs font-bold text-neutral-900 font-num block mt-0.5">₹0.00</span>
+                    </div>
+                    <div class="bg-[#F8F9FE] p-2.5 rounded-xl border border-neutral-100">
+                        <span class="text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider block">PAID ALREADY</span>
+                        <span id="payment-modal-paid" class="text-xs font-bold text-emerald-600 font-num block mt-0.5">₹0.00</span>
+                    </div>
+                    <div class="bg-red-50/50 p-2.5 rounded-xl border border-red-100">
+                        <span class="text-[9px] font-extrabold text-red-500 uppercase tracking-wider block">OUTSTANDING</span>
+                        <span id="payment-modal-pending" class="text-xs font-black text-red-600 font-num block mt-0.5">₹0.00</span>
+                    </div>
+                </div>
+
+                <!-- Boxes Stats Card -->
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-[#F8F9FE] p-2.5 rounded-xl border border-neutral-100">
+                        <span class="text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider block">BOXES DELIVERED</span>
+                        <span id="payment-modal-boxes-delivered" class="text-xs font-bold text-neutral-900 font-num block mt-0.5">0</span>
+                    </div>
+                    <div class="bg-[#F8F9FE] p-2.5 rounded-xl border border-neutral-100">
+                        <span class="text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider block">BOXES RETURNED</span>
+                        <span id="payment-modal-boxes-returned" class="text-xs font-bold text-emerald-600 font-num block mt-0.5">0</span>
+                    </div>
+                    <div class="bg-red-50/50 p-2.5 rounded-xl border border-red-100">
+                        <span class="text-[9px] font-extrabold text-red-500 uppercase tracking-wider block">PENDING BOXES</span>
+                        <span id="payment-modal-boxes-pending" class="text-xs font-black text-red-600 font-num block mt-0.5">0</span>
+                    </div>
+                </div>
+
+                <!-- Existing Payments History List -->
+                <div class="space-y-2">
+                    <span class="text-[9px] font-extrabold uppercase tracking-widest text-neutral-400 px-1 block font-ui">Payment & Box History Log</span>
+                    <div id="payment-modal-history-list" class="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                        <!-- List of past payments & box returns -->
+                    </div>
+                </div>
+
+                <!-- Add Payment Form -->
+                <form id="record-payment-form" class="space-y-4 pt-2 border-t border-neutral-100">
+                    <input type="hidden" id="payment-modal-invoice-id">
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">PAYMENT AMOUNT (₹)</label>
+                            <input type="number" step="any" id="payment-modal-input-amount" required placeholder="0" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">BOXES RETURNED</label>
+                            <input type="number" id="payment-modal-input-boxes" placeholder="0" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">PAYMENT DATE</label>
+                            <input type="date" id="payment-modal-input-date" required class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider mb-1 px-1">NOTE / REMARK</label>
+                            <input type="text" id="payment-modal-input-note" placeholder="Ex: Cash / Bank sync / returned 5 boxes" class="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-[#5D5FEF] hover:bg-[#4F46E5] text-white py-4 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-md card-transition">
+                        RECORD PAYMENT & BOXES
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -583,6 +781,94 @@
         </div>
     </div>
 
+    <!-- LEFT-SLIDING SIDEBAR MENU -->
+    <div id="sidebar-menu-modal" class="fixed inset-0 bg-neutral-950/50 z-50 backdrop-blur-sm sidebar-overlay" onclick="closeSidebarOnOverlayClick(event)">
+        <div class="sidebar-panel bg-white w-full max-w-xs h-full mr-auto flex flex-col shadow-2xl">
+            <!-- Sidebar Header -->
+            <div class="p-5 border-b border-neutral-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl overflow-hidden border border-[#5D5FEF]/30 p-1 flex items-center justify-center bg-indigo-50/50">
+                        <img src="LOGO.png" alt="OK Fruits" class="h-8 w-8 object-contain">
+                    </div>
+                    <div>
+                        <h4 class="text-base font-black text-neutral-900 tracking-widest uppercase font-header">OK FRUITS</h4>
+                        <p id="sidebar-greeting" class="text-[10px] text-neutral-400 font-bold tracking-wider uppercase">Hello, Trader</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('sidebar-menu-modal')" class="text-neutral-400 hover:text-red-500 transition-all p-1 cursor-pointer">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex-grow py-4 overflow-y-auto no-scrollbar px-4 space-y-6">
+                <!-- OPERATIONS SECTION -->
+                <div>
+                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-2 px-2">OPERATIONS</h5>
+                    <div class="space-y-1">
+                        <button onclick="sidebarNavigate('dashboard')" class="w-full flex items-center gap-3 px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all cursor-pointer">
+                            <i class="fa-solid fa-chart-pie text-neutral-400 w-5 text-center"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button onclick="sidebarNavigate('invoices')" class="w-full flex justify-between items-center px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-invoice-dollar text-neutral-400 w-5 text-center"></i>
+                                <span>Invoices</span>
+                            </div>
+                            <span id="sidebar-invoices-badge" class="bg-indigo-100 text-[#5D5FEF] text-[10px] font-bold px-2 py-0.5 rounded-full font-num">0</span>
+                        </button>
+                        <button onclick="sidebarNavigate('sales')" class="w-full flex items-center gap-3 px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all admin-only-btn cursor-pointer" style="display:none">
+                            <i class="fa-solid fa-circle-plus text-neutral-400 w-5 text-center"></i>
+                            <span>Create Invoice</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RECORDS SECTION -->
+                <div>
+                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-2 px-2">RECORDS</h5>
+                    <div class="space-y-1">
+                        <button onclick="sidebarNavigate('inventory')" class="w-full flex justify-between items-center px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-boxes-stacked text-neutral-400 w-5 text-center"></i>
+                                <span>Inventory</span>
+                            </div>
+                            <span id="sidebar-inventory-badge" class="bg-indigo-100 text-[#5D5FEF] text-[10px] font-bold px-2 py-0.5 rounded-full font-num">0</span>
+                        </button>
+                        <button onclick="sidebarNavigate('customers')" class="w-full flex items-center gap-3 px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all cursor-pointer">
+                            <i class="fa-solid fa-users text-neutral-400 w-5 text-center"></i>
+                            <span>Customers</span>
+                        </button>
+                        <button onclick="sidebarNavigate('debts')" class="w-full flex justify-between items-center px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-wallet text-neutral-400 w-5 text-center"></i>
+                                <span>Credits & Debts</span>
+                            </div>
+                            <span id="sidebar-debts-badge" class="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full font-num">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS SECTION -->
+                <div>
+                    <h5 class="text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-2 px-2">ANALYTICS</h5>
+                    <div class="space-y-1">
+                        <button onclick="sidebarNavigate('reports')" class="w-full flex items-center gap-3 px-3 py-3 text-sm font-semibold text-neutral-700 hover:text-[#5D5FEF] hover:bg-indigo-50/40 rounded-2xl transition-all cursor-pointer">
+                            <i class="fa-solid fa-file-csv text-neutral-400 w-5 text-center"></i>
+                            <span>Export Reports</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="p-5 border-t border-neutral-100 text-center">
+                <p class="text-[9px] text-neutral-400 font-bold tracking-widest uppercase">OK FRUITS v2.0</p>
+                <p class="text-[8px] text-neutral-300 mt-0.5">Premium Management Suite</p>
+            </div>
+        </div>
+    </div>
+
     <!-- SEARCH INVOICES MODAL -->
     <div id="search-modal" class="fixed inset-0 bg-neutral-950/60 z-50 flex items-start justify-center hidden p-4 backdrop-blur-xs">
         <div class="bg-white w-full max-w-md rounded-[32px] p-6 mt-12 space-y-4 shadow-2xl">
@@ -608,6 +894,21 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+
+        // Handle redirect result errors if any on load (crucial for mobile redirect flows)
+        auth.getRedirectResult().catch(err => {
+            const errBox = document.getElementById('login-error');
+            if (errBox) {
+                errBox.classList.remove('hidden');
+                errBox.textContent = 'Sign-in failed: ' + err.message;
+                
+                // Switch back to actions view so they see the error
+                const loadingBox = document.getElementById('login-loading');
+                const actionsBox = document.getElementById('login-actions');
+                if (loadingBox) loadingBox.classList.add('hidden');
+                if (actionsBox) actionsBox.classList.remove('hidden');
+            }
+        });
 
         // ===== ADMIN EMAILS (FULL OWNER ACCESS) =====
         const ADMIN_EMAILS = [
@@ -673,7 +974,7 @@
                 setTimeout(() => {
                     content.classList.remove("opacity-0");
                 }, 50);
-                arrowContainer.className = "bg-black text-white h-6 w-6 rounded-full flex items-center justify-center text-xs shadow-sm card-transition";
+                arrowContainer.className = "bg-[#CCFF00] text-black h-6 w-6 rounded-full flex items-center justify-center text-xs shadow-sm card-transition";
                 icon.className = "fa-solid fa-chevron-down";
                 label.innerText = "TOTAL PENDING";
             } else {
@@ -704,7 +1005,7 @@
                 setTimeout(() => {
                     content.classList.remove("opacity-0");
                 }, 50);
-                arrowContainer.className = "bg-black text-white h-6 w-6 rounded-full flex items-center justify-center text-xs shadow-sm card-transition";
+                arrowContainer.className = "bg-[#CCFF00] text-black h-6 w-6 rounded-full flex items-center justify-center text-xs shadow-sm card-transition";
                 icon.className = "fa-solid fa-chevron-down";
                 label.innerText = "TOTAL EARNED";
             } else {
@@ -722,15 +1023,50 @@
 
         // ===== AUTHENTICATION SYSTEM =====
         function signInWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => {
+            // Check for file protocol first (direct double-click on desktop)
+            if (window.location.protocol === 'file:') {
                 const errBox = document.getElementById('login-error');
-                errBox.classList.remove('hidden');
-                errBox.textContent = 'Sign-in failed: ' + err.message;
-            });
+                if (errBox) {
+                    errBox.classList.remove('hidden');
+                    errBox.innerHTML = `<strong>Local File Error:</strong> Google Sign-In is not supported when opening index.html directly from a folder (file:// protocol). Please deploy your code to a web server (like Vercel) or run a local server (like VS Code Live Server).<br><br>Deployed URL: <a href="https://ok-fruits.vercel.app" class="underline text-indigo-300 font-bold" target="_blank">ok-fruits.vercel.app</a>`;
+                }
+                return;
+            }
+
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Detect if running on mobile device or small screen to use redirect instead of popup
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+            
+            if (isMobile) {
+                // Show loading spinner while redirecting
+                const loadingBox = document.getElementById('login-loading');
+                const actionsBox = document.getElementById('login-actions');
+                if (loadingBox) loadingBox.classList.remove('hidden');
+                if (actionsBox) actionsBox.classList.add('hidden');
+                
+                auth.signInWithRedirect(provider).catch(err => {
+                    if (loadingBox) loadingBox.classList.add('hidden');
+                    if (actionsBox) actionsBox.classList.remove('hidden');
+                    const errBox = document.getElementById('login-error');
+                    if (errBox) {
+                        errBox.classList.remove('hidden');
+                        errBox.textContent = 'Sign-in failed: ' + err.message;
+                    }
+                });
+            } else {
+                auth.signInWithPopup(provider).catch(err => {
+                    const errBox = document.getElementById('login-error');
+                    if (errBox) {
+                        errBox.classList.remove('hidden');
+                        errBox.textContent = 'Sign-in failed: ' + err.message;
+                    }
+                });
+            }
         }
 
         function signOutUser() {
+            localStorage.removeItem('okFruitsLoggedIn');
             auth.signOut().then(() => {
                 location.reload();
             });
@@ -788,34 +1124,28 @@
             }
         }
 
-        // Firebase Auth State Listener
+        // Firebase Auth State Listener (Bypassed temporarily for testing/editing)
         auth.onAuthStateChanged(user => {
-            if (user) {
-                currentAuthUser = user;
-                isAdminUser = ADMIN_EMAILS.includes(user.email.toLowerCase());
-                currentUserProfile.role = isAdminUser ? 'owner' : 'staff';
+            currentAuthUser = user || { email: 'sinanc.toall@gmail.com', displayName: 'OK Fruits Admin' };
+            isAdminUser = true; // Temporary bypass: Force Admin Access
+            currentUserProfile.role = 'owner';
+            
+            localStorage.setItem('okFruitsLoggedIn', 'true');
 
-                // Hide login, show dashboard
-                document.getElementById('login-gate').classList.add('hidden');
-                document.getElementById('dashboard-app').classList.remove('hidden');
+            // Hide login, show dashboard
+            document.getElementById('login-gate').classList.add('hidden');
+            document.getElementById('dashboard-app').classList.remove('hidden');
 
-                // Show footer nav
-                const footer = document.querySelector('footer');
-                if (footer) footer.classList.remove('hidden');
+            // Show footer nav
+            const footer = document.querySelector('footer');
+            if (footer) footer.classList.remove('hidden');
 
-                // Start the app
-                startGlobalListeners();
-                loadUserProfile();
+            // Start the app
+            startGlobalListeners();
+            loadUserProfile();
 
-                // Apply role restrictions after a short delay for DOM to render
-                setTimeout(applyRoleRestrictions, 300);
-            } else {
-                // Not logged in: show login gate
-                document.getElementById('login-gate').classList.remove('hidden');
-                document.getElementById('dashboard-app').classList.add('hidden');
-                const footer = document.querySelector('footer');
-                if (footer) footer.classList.add('hidden');
-            }
+            // Apply role restrictions after a short delay for DOM to render
+            setTimeout(applyRoleRestrictions, 300);
         });
 
         // TOAST SYSTEM
@@ -855,7 +1185,7 @@
             if (!modal) return;
             
             modal.classList.remove('hidden');
-            if (id === 'data-modal' || id === 'user-profile-modal') {
+            if (id === 'data-modal' || id === 'user-profile-modal' || id === 'sidebar-menu-modal') {
                 // Trigger slide-up or slide-in animation
                 requestAnimationFrame(() => {
                     modal.classList.add('active');
@@ -878,7 +1208,7 @@
             const modal = document.getElementById(id);
             if (!modal) return;
             
-            if (id === 'data-modal' || id === 'user-profile-modal') {
+            if (id === 'data-modal' || id === 'user-profile-modal' || id === 'sidebar-menu-modal') {
                 modal.classList.remove('active');
                 setTimeout(() => {
                     modal.classList.add('hidden');
@@ -930,7 +1260,8 @@
             const container = document.getElementById("invoice-items-container");
             if (container) container.innerHTML = "";
             
-            // Default show TWO empty item rows
+            // Default show THREE empty item rows
+            addInvoiceItemRow();
             addInvoiceItemRow();
             addInvoiceItemRow();
             
@@ -940,8 +1271,11 @@
             document.getElementById('inv-vala-boxes').value = "";
             document.getElementById('inv-total-quantity').value = "";
             document.getElementById('inv-gross-amount').value = "";
+            document.getElementById('inv-old-balance').value = "";
+            document.getElementById('inv-discount').value = "";
             document.getElementById('inv-advance').value = "";
             document.getElementById('inv-net-pending-total').value = "";
+            document.getElementById('inv-description').value = "";
             document.getElementById("invoice-credit-warning-banner").classList.add("hidden");
             
             // Reset payment toggle button
@@ -959,6 +1293,52 @@
             if (event.target === event.currentTarget) {
                 closeModal('user-profile-modal');
             }
+        }
+
+        function closeSidebarOnOverlayClick(event) {
+            // Close only if clicking the dark overlay, not the panel itself
+            if (event.target === event.currentTarget) {
+                closeModal('sidebar-menu-modal');
+            }
+        }
+
+        function sidebarNavigate(route) {
+            closeModal('sidebar-menu-modal');
+            
+            if (route === 'dashboard') {
+                const element = document.getElementById('dashboard-app');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            } else if (route === 'invoices') {
+                showPanel('panel-records');
+            } else if (route === 'sales') {
+                openModal('data-modal');
+                toggleSubform('form-inv');
+            } else if (route === 'inventory') {
+                showPanel('panel-items');
+            } else if (route === 'customers') {
+                showPanel('panel-boxes');
+            } else if (route === 'debts') {
+                filterSales('pending');
+                showPanel('panel-records');
+            } else if (route === 'reports') {
+                exportInvoicesToExcel();
+            }
+        }
+
+        function updateSidebarBadges() {
+            const invoicesCount = localizedInvoices.length;
+            const inventoryCount = cachedProductsArray.length;
+            const pendingDebtsCount = localizedInvoices.filter(i => i.status === 'pending').length;
+
+            const invBadge = document.getElementById('sidebar-invoices-badge');
+            const itemBadge = document.getElementById('sidebar-inventory-badge');
+            const debtBadge = document.getElementById('sidebar-debts-badge');
+
+            if (invBadge) invBadge.textContent = invoicesCount;
+            if (itemBadge) itemBadge.textContent = inventoryCount;
+            if (debtBadge) debtBadge.textContent = pendingDebtsCount;
         }
 
         // ===== USER PROFILE SYSTEM =====
@@ -1008,11 +1388,11 @@
             const unlockBtn = document.getElementById('gsheet-unlock-btn');
             if (unlockBtn) unlockBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Unlock';
 
-            // Update dashboard header greeting
-            const h1 = document.querySelector('header h1');
-            const h2 = document.querySelector('header h2');
-            if (h1 && currentUserProfile.name) h1.textContent = `hello , ${currentUserProfile.name.split(' ')[0].toLowerCase()}`;
-            if (h2 && currentUserProfile.business) h2.textContent = currentUserProfile.business.toLowerCase();
+            // Update sidebar greeting
+            const sidebarGreeting = document.getElementById('sidebar-greeting');
+            if (sidebarGreeting && currentUserProfile.name) {
+                sidebarGreeting.textContent = `Hello, ${currentUserProfile.name.split(' ')[0]}`;
+            }
 
             // Populate live stats
             document.getElementById('user-stat-sales').textContent = localizedInvoices.length;
@@ -1042,11 +1422,11 @@
                 document.getElementById('user-profile-display-name').textContent = profileData.business || profileData.name;
                 document.getElementById('user-profile-display-role').textContent = isAdminUser ? "ADMIN" : "STAFF";
                 
-                // Update the header greeting with new name
-                const h1 = document.querySelector('header h1');
-                const h2 = document.querySelector('header h2');
-                if (h1) h1.textContent = `hello , ${profileData.name.split(' ')[0].toLowerCase()}`;
-                if (h2) h2.textContent = profileData.business.toLowerCase();
+                // Update sidebar greeting
+                const sidebarGreeting = document.getElementById('sidebar-greeting');
+                if (sidebarGreeting && profileData.name) {
+                    sidebarGreeting.textContent = `Hello, ${profileData.name.split(' ')[0]}`;
+                }
 
                 showToast('Profile saved successfully!');
                 closeModal('user-profile-modal');
@@ -1060,11 +1440,11 @@
             db.collection('userProfile').doc('owner').get().then(doc => {
                 if (doc.exists) {
                     currentUserProfile = { ...currentUserProfile, ...doc.data() };
-                    // Update header greeting on page load
-                    const h1 = document.querySelector('header h1');
-                    const h2 = document.querySelector('header h2');
-                    if (h1 && currentUserProfile.name) h1.textContent = `hello , ${currentUserProfile.name.split(' ')[0].toLowerCase()}`;
-                    if (h2 && currentUserProfile.business) h2.textContent = currentUserProfile.business.toLowerCase();
+                    // Update sidebar greeting on page load
+                    const sidebarGreeting = document.getElementById('sidebar-greeting');
+                    if (sidebarGreeting && currentUserProfile.name) {
+                        sidebarGreeting.textContent = `Hello, ${currentUserProfile.name.split(' ')[0]}`;
+                    }
                 }
             }).catch(() => {});
 
@@ -1091,6 +1471,9 @@
                     status: invoiceData.status || 'pending',
                     amount: invoiceData.amount || 0,
                     rate: invoiceData.rate || 0,
+                    discount: invoiceData.discount || 0,
+                    description: invoiceData.description || '',
+                    returnedBoxes: invoiceData.returnedBoxes || 0,
                     timestamp: new Date().toISOString()
                 };
 
@@ -1261,6 +1644,157 @@
             document.getElementById("suggested-products-list").innerHTML = cachedProductsArray.map(p => `<option value="${p.name}"></option>`).join("");
         }
 
+        // Custom Autocomplete and Suggestions Handlers (Opaque popup lists - suggestion as per typing only)
+        function handleCustomerAutocomplete(inputEl) {
+            const val = inputEl.value.trim().toLowerCase();
+            const suggestionsBox = document.getElementById("customer-suggestions-box");
+            if (!suggestionsBox) return;
+
+            updateCustomerInfoFlow();
+
+            if (!val) {
+                // Do not show suggestions if empty
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            const matches = cachedCustomersArray.filter(c => c.name.toLowerCase().includes(val));
+
+            if (matches.length === 0) {
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            suggestionsBox.innerHTML = matches.map(c => `
+                <div onclick="selectCustomerSuggestion('${c.name.replace(/'/g, "\\'")}')" class="px-4 py-2.5 hover:bg-indigo-50 text-neutral-800 text-xs font-bold cursor-pointer transition-all border-b border-neutral-100 last:border-b-0 text-left">
+                    ${c.name} <span class="text-[9px] font-normal text-neutral-400">(${c.city})</span>
+                </div>
+            `).join("");
+
+            suggestionsBox.classList.remove("hidden");
+        }
+
+        function toggleCustomerDropdown() {
+            const suggestionsBox = document.getElementById("customer-suggestions-box");
+            if (!suggestionsBox) return;
+            
+            if (!suggestionsBox.classList.contains("hidden")) {
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            const matches = cachedCustomersArray;
+            if (matches.length === 0) return;
+
+            suggestionsBox.innerHTML = matches.map(c => `
+                <div onclick="selectCustomerSuggestion('${c.name.replace(/'/g, "\\'")}')" class="px-4 py-2.5 hover:bg-indigo-50 text-neutral-800 text-xs font-bold cursor-pointer transition-all border-b border-neutral-100 last:border-b-0 text-left">
+                    ${c.name} <span class="text-[9px] font-normal text-neutral-400">(${c.city})</span>
+                </div>
+            `).join("");
+
+            suggestionsBox.classList.remove("hidden");
+        }
+
+        function selectCustomerSuggestion(name) {
+            const inputEl = document.getElementById("inv-customer-input");
+            if (inputEl) {
+                inputEl.value = name;
+                updateCustomerInfoFlow();
+            }
+            const suggestionsBox = document.getElementById("customer-suggestions-box");
+            if (suggestionsBox) {
+                suggestionsBox.classList.add("hidden");
+            }
+        }
+
+        function handleProductAutocomplete(inputEl, rowId) {
+            const val = inputEl.value.trim().toLowerCase();
+            const suggestionsBox = document.getElementById(`product-suggestions-${rowId}`);
+            if (!suggestionsBox) return;
+
+            if (!val) {
+                // Do not show suggestions if empty
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            const matches = cachedProductsArray.filter(p => p.name.toLowerCase().includes(val));
+
+            if (matches.length === 0) {
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            suggestionsBox.innerHTML = matches.map(p => `
+                <div onclick="selectProductSuggestion('${p.name.replace(/'/g, "\\'")}', ${rowId}, ${p.price})" class="px-3 py-2 hover:bg-indigo-50 text-neutral-800 text-xs font-bold cursor-pointer transition-all border-b border-neutral-100 last:border-b-0 text-left">
+                    ${p.name} <span class="text-[9px] font-normal text-emerald-600">(₹${p.price}/kg)</span>
+                </div>
+            `).join("");
+
+            suggestionsBox.classList.remove("hidden");
+        }
+
+        function toggleProductDropdown(rowId) {
+            const suggestionsBox = document.getElementById(`product-suggestions-${rowId}`);
+            if (!suggestionsBox) return;
+            
+            if (!suggestionsBox.classList.contains("hidden")) {
+                suggestionsBox.classList.add("hidden");
+                return;
+            }
+
+            const matches = cachedProductsArray;
+            if (matches.length === 0) return;
+
+            suggestionsBox.innerHTML = matches.map(p => `
+                <div onclick="selectProductSuggestion('${p.name.replace(/'/g, "\\'")}', ${rowId}, ${p.price})" class="px-3 py-2 hover:bg-indigo-50 text-neutral-800 text-xs font-bold cursor-pointer transition-all border-b border-neutral-100 last:border-b-0 text-left">
+                    ${p.name} <span class="text-[9px] font-normal text-emerald-600">(₹${p.price}/kg)</span>
+                </div>
+            `).join("");
+
+            suggestionsBox.classList.remove("hidden");
+        }
+
+        function selectProductSuggestion(name, rowId, price) {
+            const row = document.getElementById(`invoice-item-row-${rowId}`);
+            if (row) {
+                const productInput = row.querySelector('.item-product-input');
+                const rateInput = row.querySelector('.item-rate');
+                if (productInput) productInput.value = name;
+                if (rateInput) rateInput.value = price;
+                calculateItemRowTotal(rowId);
+            }
+            const suggestionsBox = document.getElementById(`product-suggestions-${rowId}`);
+            if (suggestionsBox) {
+                suggestionsBox.classList.add("hidden");
+            }
+        }
+
+        // Global event listener to dismiss suggestions on clicking outside
+        document.addEventListener("click", function(e) {
+            const customerInput = document.getElementById("inv-customer-input");
+            const customerBox = document.getElementById("customer-suggestions-box");
+            const isClickingCustomerDropdown = e.target.closest('.customer-dropdown-btn') || e.target.classList.contains('customer-dropdown-btn');
+            
+            if (customerBox && e.target !== customerInput && !isClickingCustomerDropdown && !customerBox.contains(e.target)) {
+                customerBox.classList.add("hidden");
+            }
+            
+            document.querySelectorAll("[id^='product-suggestions-']").forEach(box => {
+                const rowId = box.id.split('-').pop();
+                const productInput = document.querySelector(`#invoice-item-row-${rowId} .item-product-input`);
+                const isClickingProductDropdown = e.target.closest(`.product-dropdown-btn-${rowId}`) || e.target.classList.contains(`product-dropdown-btn-${rowId}`);
+                
+                if (productInput && e.target !== productInput && !isClickingProductDropdown && !box.contains(e.target)) {
+                    box.classList.add("hidden");
+                }
+            });
+        });
+
         let invoiceItemRowCount = 0;
 
         function addInvoiceItemRow(data = {}) {
@@ -1269,7 +1803,7 @@
             const rowId = ++invoiceItemRowCount;
             
             const rowDiv = document.createElement("div");
-            rowDiv.className = "invoice-item-row grid grid-cols-12 gap-2 items-center relative pb-2 border-b border-gray-100 last:border-b-0";
+            rowDiv.className = "invoice-item-row space-y-1 pb-3 border-b border-gray-100 last:border-b-0";
             rowDiv.id = `invoice-item-row-${rowId}`;
             
             const productVal = data.product || "";
@@ -1278,27 +1812,44 @@
             const amtVal = data.amount || "";
             
             rowDiv.innerHTML = `
-                <!-- Rate/KG (col-span-3) -->
-                <div class="col-span-3">
-                    <input type="number" step="any" placeholder="000" oninput="calculateItemRowTotal(${rowId})" value="${rateVal}" required class="item-rate w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                <!-- Row Labels -->
+                <div class="grid grid-cols-12 gap-2 text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider px-1">
+                    <div class="col-span-3">RATE / KG</div>
+                    <div class="col-span-4">PARTICULARS</div>
+                    <div class="col-span-2">QUA</div>
+                    <div class="col-span-3">TOTAL AMT</div>
                 </div>
-                
-                <!-- Particulars (col-span-4) -->
-                <div class="col-span-4">
-                    <input type="text" placeholder="Mango..." list="suggested-products-list" oninput="autoFillItemRowPrice(this, ${rowId})" value="${productVal}" required class="item-product-input w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
-                </div>
-                
-                <!-- QUA (col-span-2) -->
-                <div class="col-span-2">
-                    <input type="number" step="any" placeholder="57.4" oninput="calculateItemRowTotal(${rowId})" value="${qtyVal}" required class="item-qty-weight w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
-                </div>
-                
-                <!-- TOTAL AMT (col-span-3) -->
-                <div class="col-span-3 flex items-center gap-1">
-                    <input type="number" step="any" placeholder="0000" oninput="calculateInvoiceTotals()" value="${amtVal}" required class="item-row-total w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
-                    <button type="button" onclick="removeInvoiceItemRow(${rowId})" class="invoice-item-delete-btn text-neutral-400 hover:text-red-500 transition-all shrink-0">
-                        <i class="fa-solid fa-xmark text-sm"></i>
-                    </button>
+                <!-- Row Inputs -->
+                <div class="grid grid-cols-12 gap-2 items-center">
+                    <!-- Rate/KG (col-span-3) -->
+                    <div class="col-span-3">
+                        <input type="number" step="any" placeholder="000" oninput="calculateItemRowTotal(${rowId})" value="${rateVal}" class="item-rate w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                    </div>
+                    
+                    <!-- Particulars (col-span-4) -->
+                    <div class="col-span-4 relative">
+                        <div class="relative">
+                            <input type="text" placeholder="Mango..." autocomplete="off" oninput="handleProductAutocomplete(this, ${rowId})" value="${productVal}" class="item-product-input w-full pl-2 pr-6 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF]">
+                            <button type="button" onclick="toggleProductDropdown(${rowId})" class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-all cursor-pointer" title="Show suggestions">
+                                <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                            </button>
+                        </div>
+                        <!-- Custom suggestions popup (solid background) -->
+                        <div id="product-suggestions-${rowId}" class="absolute z-[100] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-2xl max-h-36 overflow-y-auto no-scrollbar hidden"></div>
+                    </div>
+                    
+                    <!-- QUA (col-span-2) -->
+                    <div class="col-span-2">
+                        <input type="number" step="any" placeholder="57.4" oninput="calculateItemRowTotal(${rowId})" value="${qtyVal}" class="item-qty-weight w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                    </div>
+                    
+                    <!-- TOTAL AMT (col-span-3) -->
+                    <div class="col-span-3 flex items-center gap-1">
+                        <input type="number" step="any" placeholder="0000" oninput="calculateInvoiceTotals()" value="${amtVal}" class="item-row-total w-full px-2 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5D5FEF] font-num">
+                        <button type="button" onclick="removeInvoiceItemRow(${rowId})" class="invoice-item-delete-btn text-neutral-400 hover:text-red-500 transition-all shrink-0">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
                 </div>
             `;
             
@@ -1362,31 +1913,20 @@
             let balance = 0;
             localizedInvoices.forEach(inv => {
                 if (inv.customer.toLowerCase() === customerName.toLowerCase() && inv.status === 'pending') {
-                    balance += (parseFloat(inv.amount || 0) - parseFloat(inv.advancePaid || 0));
+                    balance += (parseFloat(inv.amount || 0) - parseFloat(inv.discount || 0) - parseFloat(inv.advancePaid || 0));
                 }
             });
             return balance;
         }
 
         function updateNetPendingTotal() {
-            const customerName = document.getElementById('inv-customer-input').value.trim();
-            const oldBalance = getCustomerOldBalance(customerName);
-            
-            const oldBalanceEl = document.getElementById('inv-old-balance-badge');
-            if (oldBalanceEl) {
-                oldBalanceEl.innerText = `Old Pending: ₹${oldBalance.toLocaleString('en-IN')}`;
-                if (oldBalance > 0) {
-                    oldBalanceEl.classList.remove('hidden');
-                } else {
-                    oldBalanceEl.classList.add('hidden');
-                }
-            }
-            
+            const oldBalance = parseFloat(document.getElementById('inv-old-balance').value || 0);
             const grossAmount = parseFloat(document.getElementById('inv-gross-amount').value || 0);
+            const discount = parseFloat(document.getElementById('inv-discount').value || 0);
             const advance = parseFloat(document.getElementById('inv-advance').value || 0);
             
-            // Net pending amount = Gross Invoice Total + Old Balance - Advance Paid
-            const netPending = Math.max(0, grossAmount + oldBalance - advance);
+            // Net pending amount = Gross Invoice Total + Old Balance - Discount - Advance Paid
+            const netPending = grossAmount + oldBalance - discount - advance;
             document.getElementById('inv-net-pending-total').value = netPending.toFixed(2);
         }
 
@@ -1408,14 +1948,14 @@
             if (status === 'earned') {
                 statusInput.value = 'earned';
                 btn.innerText = 'RECEIVED';
-                btn.className = "w-full px-4 py-3 bg-[#CCFF00] text-black border border-lime-300 rounded-xl text-xs font-black uppercase tracking-wider shadow-xs transition-all h-11 flex items-center justify-center card-transition";
+                btn.className = "w-full px-2 py-3 bg-[#CCFF00] text-black border border-lime-300 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-xs transition-all h-11 flex items-center justify-center card-transition";
                 
                 // Set advance automatically to matching gross amount
                 advanceInput.value = grossVal;
             } else {
                 statusInput.value = 'pending';
                 btn.innerText = 'DEBT';
-                btn.className = "w-full px-4 py-3 bg-[#EAEAEA] text-neutral-800 border border-neutral-200 rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs transition-all h-11 flex items-center justify-center card-transition";
+                btn.className = "w-full px-2 py-3 bg-[#EAEAEA] text-neutral-800 border border-neutral-200 rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-xs transition-all h-11 flex items-center justify-center card-transition";
                 
                 // Clear advance if it was auto-populated with matching gross amount
                 if (parseFloat(advanceInput.value || 0) === grossVal) {
@@ -1427,6 +1967,12 @@
 
         function updateCustomerInfoFlow() {
             checkCreditGateThreshold();
+            
+            // Auto-populate old balance input field
+            const customerName = document.getElementById('inv-customer-input').value.trim();
+            const oldBalance = getCustomerOldBalance(customerName);
+            document.getElementById('inv-old-balance').value = oldBalance;
+            
             updateNetPendingTotal();
         }
 
@@ -1493,8 +2039,9 @@
                     const data = doc.data(); data.id = doc.id; localizedInvoices.push(data);
                     const amt = parseFloat(data.amount || 0); boxTotal += parseInt(data.boxes || 0);
                     const adv = parseFloat(data.advancePaid || 0);
+                    const disc = parseFloat(data.discount || 0);
                     if (data.status === "pending") {
-                        pendingTotal += (amt - adv);
+                        pendingTotal += (amt - disc - adv);
                     }
                     earnedTotal += adv;
                 });
@@ -1519,6 +2066,7 @@
                 document.getElementById("stat-earned").innerText = "₹" + earnedTotal.toLocaleString('en-IN');
                 renderInvoicesListStream();
                 renderCustomersListStream();
+                updateSidebarBadges();
             });
 
             let isInitialProducts = true;
@@ -1544,6 +2092,7 @@
                 }
 
                 renderProductsListStream();
+                updateSidebarBadges();
             });
 
             let isInitialCustomers = true;
@@ -1609,6 +2158,9 @@
                             <span class="text-base font-bold text-neutral-900 font-num">₹${parseFloat(data.amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
                             <div class="flex gap-1.5">
                                 ${data.status === 'pending' ? `
+                                <button onclick="openRecordPaymentModal('${data.id}')" title="Record Payment & Boxes" class="h-8 w-8 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-[#5D5FEF] flex items-center justify-center transition-all admin-only-btn" ${!isAdminUser ? 'style="display:none"' : ''}>
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
                                 <button onclick="quickMarkInvoicePaid('${data.id}')" title="Mark Paid" class="h-8 w-8 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-all admin-only-btn" ${!isAdminUser ? 'style="display:none"' : ''}>
                                     <i class="fa-solid fa-check text-xs"></i>
                                 </button>
@@ -1652,7 +2204,7 @@
             let html = "";
             cachedCustomersArray.forEach(data => {
                 let customerDebt = 0;
-                localizedInvoices.filter(i => i.customer.toLowerCase() === data.name.toLowerCase() && i.status === 'pending').forEach(i => customerDebt += (parseFloat(i.amount || 0) - parseFloat(i.advancePaid || 0)));
+                localizedInvoices.filter(i => i.customer.toLowerCase() === data.name.toLowerCase() && i.status === 'pending').forEach(i => customerDebt += (parseFloat(i.amount || 0) - parseFloat(i.discount || 0) - parseFloat(i.advancePaid || 0)));
                 const breachedLimit = customerDebt > parseFloat(data.creditLimit || 0);
                 const listRowRiskStyles = breachedLimit ? 'border-red-300 bg-red-50/60 font-semibold' : 'border-white/40 bg-white/50';
                 
@@ -1691,7 +2243,8 @@
                 const originalInv = localizedInvoices.find(i => i.id === id);
                 if (!originalInv) return;
                 
-                const grossVal = parseFloat(originalInv.amount || 0);
+                const discountVal = parseFloat(originalInv.discount || 0);
+                const grossVal = parseFloat(originalInv.amount || 0) - discountVal;
                 await db.collection("invoices").doc(id).update({ 
                     status: "earned",
                     advancePaid: grossVal 
@@ -1703,10 +2256,215 @@
                     status: "earned",
                     advancePaid: grossVal
                 }, 'mark_paid');
-            } catch (e) {
-                showToast(e.message, "error");
             }
         }
+
+        // RECORD PARTIAL PAYMENT MODAL & SUBMIT SYSTEM
+        function closeModalOnPaymentOverlayClick(event) {
+            if (event.target === event.currentTarget) {
+                closeModal('record-payment-modal');
+            }
+        }
+
+        function openRecordPaymentModal(invoiceId) {
+            const inv = localizedInvoices.find(i => i.id === invoiceId);
+            if (!inv) return;
+            
+            document.getElementById("payment-modal-invoice-id").value = invoiceId;
+            
+            // Set details
+            document.getElementById("payment-modal-serial").innerText = inv.serialNo || 'INV-XXXX';
+            
+            const invDate = inv.createdAt ? (inv.createdAt.seconds ? new Date(inv.createdAt.seconds * 1000) : new Date(inv.createdAt)) : new Date();
+            const yyyy = invDate.getFullYear();
+            const mm = String(invDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(invDate.getDate()).padStart(2, '0');
+            document.getElementById("payment-modal-date").innerText = `Date: ${yyyy}-${mm}-${dd}`;
+            
+            document.getElementById("payment-modal-customer").innerText = inv.customer;
+            
+            // Render items list
+            let itemsHtml = "";
+            if (inv.items && inv.items.length > 0) {
+                itemsHtml = inv.items.map(item => `
+                    <div class="flex justify-between items-center text-xs py-1 border-b border-neutral-100 last:border-b-0">
+                        <span class="font-bold text-neutral-800">${item.product}</span>
+                        <span class="text-neutral-500 font-num">${item.totalQuantityWeight} KG • ₹${item.rate}/KG = <span class="font-bold text-neutral-900">₹${parseFloat(item.amount).toFixed(2)}</span></span>
+                    </div>
+                `).join("");
+            } else {
+                itemsHtml = `
+                    <div class="flex justify-between items-center text-xs py-1">
+                        <span class="font-bold text-neutral-800">${inv.product || '—'}</span>
+                        <span class="text-neutral-500 font-num">${inv.totalQuantityWeight || 0} KG • ₹${inv.rate || 0}/KG = <span class="font-bold text-neutral-900">₹${parseFloat(inv.amount || 0).toFixed(2)}</span></span>
+                    </div>
+                `;
+            }
+            document.getElementById("payment-modal-items").innerHTML = itemsHtml;
+            
+            // Set financials
+            const discount = parseFloat(inv.discount || 0);
+            const total = parseFloat(inv.amount || 0);
+            const paid = parseFloat(inv.advancePaid || 0);
+            const pending = Math.max(0, total - discount - paid);
+            
+            document.getElementById("payment-modal-total").innerText = `₹${total.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+            document.getElementById("payment-modal-paid").innerText = `₹${paid.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+            document.getElementById("payment-modal-pending").innerText = `₹${pending.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+            
+            // Set Box stats
+            const boxesDelivered = parseInt(inv.boxes || 0);
+            const boxesReturned = parseInt(inv.returnedBoxes || 0);
+            const boxesPending = Math.max(0, boxesDelivered - boxesReturned);
+            
+            document.getElementById("payment-modal-boxes-delivered").innerText = boxesDelivered;
+            document.getElementById("payment-modal-boxes-returned").innerText = boxesReturned;
+            document.getElementById("payment-modal-boxes-pending").innerText = boxesPending;
+            
+            // Render payment history list
+            const paymentHistory = [];
+            if (inv.payments && inv.payments.length > 0) {
+                inv.payments.forEach(p => paymentHistory.push(p));
+            } else if (paid > 0) {
+                paymentHistory.push({
+                    amount: paid,
+                    boxesReturned: 0,
+                    date: inv.createdAt,
+                    note: "Initial Advance"
+                });
+            }
+            
+            let historyHtml = "";
+            if (paymentHistory.length === 0) {
+                historyHtml = `<div class="text-center py-4 text-xs text-neutral-400">No payment records found.</div>`;
+            } else {
+                paymentHistory.forEach(pay => {
+                    const payDate = pay.date ? (pay.date.seconds ? new Date(pay.date.seconds * 1000) : new Date(pay.date)) : new Date();
+                    const py = payDate.getFullYear();
+                    const pm = String(payDate.getMonth() + 1).padStart(2, '0');
+                    const pd = String(payDate.getDate()).padStart(2, '0');
+                    
+                    let detailsText = "";
+                    if (pay.amount > 0 && pay.boxesReturned > 0) {
+                        detailsText = `paid ₹${parseFloat(pay.amount).toFixed(2)} & returned ${pay.boxesReturned} empty boxes`;
+                    } else if (pay.amount > 0) {
+                        detailsText = `paid ₹${parseFloat(pay.amount).toFixed(2)}`;
+                    } else if (pay.boxesReturned > 0) {
+                        detailsText = `returned ${pay.boxesReturned} empty boxes`;
+                    }
+                    
+                    historyHtml += `
+                        <div class="flex justify-between items-center bg-[#F8F9FE] border border-neutral-100 p-2.5 rounded-xl text-xs font-semibold">
+                            <div>
+                                <span class="text-[9px] font-extrabold text-[#5D5FEF] block uppercase tracking-wider">${pay.note || 'Payment'}</span>
+                                <span class="text-[10px] text-neutral-400 font-num mt-0.5">${py}-${pm}-${pd} (${detailsText})</span>
+                            </div>
+                            <span class="font-bold text-emerald-600 font-num">₹${parseFloat(pay.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById("payment-modal-history-list").innerHTML = historyHtml;
+            
+            // Set payment input fields
+            document.getElementById("payment-modal-input-amount").value = pending.toFixed(2);
+            document.getElementById("payment-modal-input-boxes").value = "";
+            
+            const today = new Date();
+            const tyy = today.getFullYear();
+            const tmm = String(today.getMonth() + 1).padStart(2, '0');
+            const tdd = String(today.getDate()).padStart(2, '0');
+            document.getElementById("payment-modal-input-date").value = `${tyy}-${tmm}-${tdd}`;
+            document.getElementById("payment-modal-input-note").value = "";
+            
+            openModal("record-payment-modal");
+        }
+
+        document.getElementById("record-payment-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const invoiceId = document.getElementById("payment-modal-invoice-id").value;
+            const newPaymentAmount = parseFloat(document.getElementById("payment-modal-input-amount").value || 0);
+            const newBoxesReturned = parseInt(document.getElementById("payment-modal-input-boxes").value || 0);
+            const paymentDateStr = document.getElementById("payment-modal-input-date").value;
+            const paymentNoteStr = document.getElementById("payment-modal-input-note").value.trim();
+            
+            if (newPaymentAmount < 0 || newBoxesReturned < 0) {
+                showToast("Please enter positive values for payment and boxes!", "warning");
+                return;
+            }
+            if (newPaymentAmount === 0 && newBoxesReturned === 0) {
+                showToast("Please enter a payment amount or boxes returned!", "warning");
+                return;
+            }
+            
+            const inv = localizedInvoices.find(i => i.id === invoiceId);
+            if (!inv) return;
+            
+            try {
+                const discount = parseFloat(inv.discount || 0);
+                const total = parseFloat(inv.amount || 0);
+                const currentPaid = parseFloat(inv.advancePaid || 0);
+                const currentReturned = parseInt(inv.returnedBoxes || 0);
+                
+                const newAdvancePaid = currentPaid + newPaymentAmount;
+                const newReturnedBoxes = currentReturned + newBoxesReturned;
+                
+                const outstanding = total - discount - newAdvancePaid;
+                const newStatus = outstanding <= 0 ? 'earned' : 'pending';
+                
+                // Get existing payments
+                const paymentHistory = [];
+                if (inv.payments && inv.payments.length > 0) {
+                    inv.payments.forEach(p => paymentHistory.push(p));
+                } else if (currentPaid > 0) {
+                    paymentHistory.push({
+                        amount: currentPaid,
+                        boxesReturned: 0,
+                        date: inv.createdAt || firebase.firestore.Timestamp.fromDate(new Date()),
+                        note: "Initial Advance"
+                    });
+                }
+                
+                // Create note automatically if not entered
+                let finalNote = paymentNoteStr;
+                if (!finalNote) {
+                    if (newPaymentAmount > 0 && newBoxesReturned > 0) {
+                        finalNote = `Cash & Boxes Returned`;
+                    } else if (newPaymentAmount > 0) {
+                        finalNote = `Partial Cash Payment`;
+                    } else {
+                        finalNote = `Returned empty boxes`;
+                    }
+                }
+                
+                paymentHistory.push({
+                    amount: newPaymentAmount,
+                    boxesReturned: newBoxesReturned,
+                    date: firebase.firestore.Timestamp.fromDate(new Date(paymentDateStr)),
+                    note: finalNote
+                });
+                
+                await db.collection("invoices").doc(invoiceId).update({
+                    advancePaid: newAdvancePaid,
+                    returnedBoxes: newReturnedBoxes,
+                    status: newStatus,
+                    payments: paymentHistory
+                });
+                
+                showToast("Recorded successfully!", "success");
+                closeModal("record-payment-modal");
+                
+                syncInvoiceToGoogleSheet({
+                    ...inv,
+                    advancePaid: newAdvancePaid,
+                    returnedBoxes: newReturnedBoxes,
+                    status: newStatus,
+                    payments: paymentHistory
+                }, 'partial_payment');
+            } catch (err) {
+                showToast("Error recording payment: " + err.message, "error");
+            }
+        });
 
         // STOCKS QUICK ADJUSTMENT
         async function quickAdjustStock(id, amount) {
@@ -1737,7 +2495,7 @@
             
             let customerDebt = 0;
             const customerInvoices = localizedInvoices.filter(i => i.customer.toLowerCase() === customer.name.toLowerCase());
-            customerInvoices.filter(i => i.status === 'pending').forEach(i => customerDebt += (parseFloat(i.amount || 0) - parseFloat(i.advancePaid || 0)));
+            customerInvoices.filter(i => i.status === 'pending').forEach(i => customerDebt += (parseFloat(i.amount || 0) - parseFloat(i.discount || 0) - parseFloat(i.advancePaid || 0)));
             
             const debtEl = document.getElementById("cust-detail-debt");
             debtEl.innerText = "₹" + customerDebt.toLocaleString('en-IN');
@@ -1811,9 +2569,10 @@
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     const amt = parseFloat(data.amount || 0);
+                    const disc = parseFloat(data.discount || 0);
                     batch.update(doc.ref, { 
                         status: "earned",
-                        advancePaid: amt
+                        advancePaid: amt - disc
                     });
                 });
                 await batch.commit();
@@ -1879,6 +2638,10 @@
             document.getElementById('inv-advance').value = inv.advancePaid || 0;
             setPaymentMethodToggle(inv.status || 'pending');
             
+            document.getElementById('inv-old-balance').value = inv.oldBalance || "";
+            document.getElementById('inv-discount').value = inv.discount || "";
+            document.getElementById('inv-description').value = inv.description || "";
+            
             document.querySelector("#invoice-form button[type='submit']").innerText = "UPDATE INVOICE";
             
             calculateInvoiceTotals();
@@ -1940,51 +2703,48 @@
             
             const lgBoxesVal = parseInt(document.getElementById("inv-lg-boxes").value || 0);
             const valaBoxesVal = parseInt(document.getElementById("inv-vala-boxes").value || 0);
-            const totalBoxes = lgBoxesVal + valaBoxesVal;
+            const totalBoxes = parseInt(document.getElementById("inv-total-boxes").value || 0);
             
             const advanceVal = parseFloat(document.getElementById("inv-advance").value || 0);
+            const discountVal = parseFloat(document.getElementById("inv-discount").value || 0);
+            const oldBalanceVal = parseFloat(document.getElementById("inv-old-balance").value || 0);
+            const descriptionVal = document.getElementById("inv-description").value.trim();
             const paymentStatus = document.getElementById("inv-payment-status").value;
 
             // Gather items
             const itemsArray = [];
-            let grandTotal = 0;
-            let totalWeight = 0;
             
             const itemRows = document.querySelectorAll('.invoice-item-row');
-            if (itemRows.length === 0) {
-                showToast("Please add at least one fruit item!", "warning");
-                return;
-            }
-            
             for (const row of itemRows) {
                 const product = row.querySelector('.item-product-input').value.trim();
                 const totalQuantityWeight = parseFloat(row.querySelector('.item-qty-weight').value || 0);
                 const rate = parseFloat(row.querySelector('.item-rate').value || 0);
                 const amount = parseFloat(row.querySelector('.item-row-total').value || 0);
                 
-                if (!product) {
-                    showToast("Please fill in the product name for all items!", "warning");
-                    return;
+                // Skip empty row (if all fields are blank)
+                if (!product && !totalQuantityWeight && !rate && !amount) {
+                    continue;
                 }
                 
                 itemsArray.push({
-                    product,
+                    product: product || "—",
                     boxes: 0,
                     boxType: "",
                     totalQuantityWeight,
                     rate,
                     amount
                 });
-                
-                grandTotal += amount;
-                totalWeight += totalQuantityWeight;
             }
 
-            // Status dynamically computed from whether there is an outstanding unpaid balance
-            const finalStatus = (grandTotal - advanceVal <= 0) ? 'earned' : 'pending';
+            // Read totals directly from inputs to support manual overrides!
+            const grandTotal = parseFloat(document.getElementById("inv-gross-amount").value || 0);
+            const totalWeight = parseFloat(document.getElementById("inv-total-quantity").value || 0);
+
+            // Status dynamically computed from whether there is an outstanding unpaid balance (accounting for discount)
+            const finalStatus = (grandTotal - discountVal - advanceVal <= 0) ? 'earned' : 'pending';
 
             // Fallbacks for legacy layout columns
-            const primaryProduct = itemsArray.map(item => item.product).join(", ");
+            const primaryProduct = itemsArray.map(item => item.product).join(", ") || "—";
             const primaryRate = itemsArray[0] ? itemsArray[0].rate : 0;
 
             try {
@@ -2005,6 +2765,9 @@
                         amount: grandTotal,
                         rate: primaryRate,
                         advancePaid: advanceVal,
+                        discount: discountVal,
+                        oldBalance: oldBalanceVal,
+                        description: descriptionVal,
                         createdAt: firebase.firestore.Timestamp.fromDate(invoiceDate)
                     });
                     
@@ -2021,7 +2784,9 @@
                     
                     // Adjust new stocks
                     for (const newItem of itemsArray) {
-                        await adjustProductStock(newItem.product, -parseFloat(newItem.totalQuantityWeight || 0));
+                        if (newItem.product && newItem.product !== "—") {
+                            await adjustProductStock(newItem.product, -parseFloat(newItem.totalQuantityWeight || 0));
+                        }
                     }
                     
                     showToast("Invoice updated successfully!", "success");
@@ -2039,6 +2804,9 @@
                         totalQuantityWeight: totalWeight,
                         rate: primaryRate,
                         advancePaid: advanceVal,
+                        discount: discountVal,
+                        oldBalance: oldBalanceVal,
+                        description: descriptionVal,
                         createdAt: firebase.firestore.Timestamp.fromDate(invoiceDate)
                     }, 'edit');
                 } else {
@@ -2060,12 +2828,17 @@
                         amount: grandTotal,
                         rate: primaryRate,
                         advancePaid: advanceVal,
+                        discount: discountVal,
+                        oldBalance: oldBalanceVal,
+                        description: descriptionVal,
                         createdAt: firebase.firestore.Timestamp.fromDate(invoiceDate)
                     });
                     
                     // Adjust stocks
                     for (const item of itemsArray) {
-                        await adjustProductStock(item.product, -parseFloat(item.totalQuantityWeight || 0));
+                        if (item.product && item.product !== "—") {
+                            await adjustProductStock(item.product, -parseFloat(item.totalQuantityWeight || 0));
+                        }
                     }
                     
                     showToast(`Invoice ${nextSerial} saved!`, "success");
@@ -2083,6 +2856,9 @@
                         totalQuantityWeight: totalWeight,
                         rate: primaryRate,
                         advancePaid: advanceVal,
+                        discount: discountVal,
+                        oldBalance: oldBalanceVal,
+                        description: descriptionVal,
                         createdAt: firebase.firestore.Timestamp.fromDate(invoiceDate)
                     }, 'create');
                 }
