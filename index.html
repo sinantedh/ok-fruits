@@ -34,6 +34,7 @@
             width: 100%;
             overscroll-behavior-x: none;
             -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
         }
         #dashboard-app {
             overflow-x: clip;
@@ -53,6 +54,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
+            overflow: hidden;
         }
         .profile-slider-overlay.active {
             opacity: 1;
@@ -99,6 +101,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
+            overflow: hidden;
         }
         .sidebar-overlay.active {
             opacity: 1;
