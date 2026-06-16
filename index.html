@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OK Fruits</title>
     <meta name="description" content="Business management app for OK Fruits">
     <meta name="theme-color" content="#10b981">
@@ -24,6 +24,20 @@
         .font-header { font-family: 'Bricolage Grotesque', sans-serif; }
         body, .font-ui { font-family: 'Poppins', sans-serif; }
         .font-num { font-family: 'Inter', sans-serif; }
+        html {
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        body {
+            overflow-x: hidden;
+            max-width: 100vw;
+            width: 100%;
+            overscroll-behavior-x: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        #dashboard-app {
+            overflow-x: clip;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -168,7 +182,7 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] space-y-2 pointer-events-none"></div>
 
-    <div id="dashboard-app" class="max-w-md mx-auto min-h-screen flex flex-col p-5 md:max-w-5xl md:grid md:grid-cols-12 md:gap-6 md:p-8 pb-44">
+    <div id="dashboard-app" class="max-w-md mx-auto min-h-screen flex flex-col p-5 md:max-w-5xl md:grid md:grid-cols-12 md:gap-6 md:p-8 pb-44 overflow-x-hidden">
         
         <!-- HEADER OVERHAUL -->
         <header class="flex justify-between items-center w-full mb-6 md:col-span-12 bg-white/40 backdrop-blur-md border border-white/20 px-4 py-3 rounded-2xl shadow-xs">
